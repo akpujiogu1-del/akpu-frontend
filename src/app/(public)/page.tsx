@@ -1,4 +1,4 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -12,7 +12,20 @@ function toYTEmbed(url: string) {
 }
 
 export default async function LandingPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -60,7 +73,7 @@ export default async function LandingPage() {
             />
           ) : (
             <div className="w-full h-full bg-primary-100 flex items-center justify-center text-primary">
-              🎬 Video Coming Soon
+              Video Coming Soon
             </div>
           )}
         </div>
@@ -78,7 +91,7 @@ export default async function LandingPage() {
             />
           ) : (
             <div className="w-full h-64 rounded-xl bg-primary-50 border-2 border-dashed border-primary flex items-center justify-center text-primary-light">
-              🗺️ Map not configured yet
+              Map not configured yet
             </div>
           )}
         </div>
@@ -111,7 +124,7 @@ export default async function LandingPage() {
                 className="bg-white rounded-xl shadow p-4 text-center"
               >
                 <img
-                  src={l.photo_url ?? "/placeholder.png"}
+                  src={l.photo_url ?? "/avatar-placeholder.png"}
                   alt={l.name}
                   className="w-24 h-24 rounded-full mx-auto mb-3 object-cover border-4 border-primary"
                 />
@@ -135,7 +148,7 @@ export default async function LandingPage() {
                 className="min-w-[160px] bg-primary-50 rounded-xl p-4 text-center shrink-0"
               >
                 <img
-                  src={l.photo_url ?? "/placeholder.png"}
+                  src={l.photo_url ?? "/avatar-placeholder.png"}
                   alt={l.name}
                   className="w-20 h-20 rounded-full mx-auto mb-2 object-cover border-4 border-primary"
                 />
@@ -159,7 +172,7 @@ export default async function LandingPage() {
                 className="bg-white rounded-xl shadow p-4 text-center"
               >
                 <img
-                  src={l.photo_url ?? "/placeholder.png"}
+                  src={l.photo_url ?? "/avatar-placeholder.png"}
                   alt={l.name}
                   className="w-20 h-20 rounded-full mx-auto mb-2 object-cover border-4 border-secondary"
                 />
@@ -213,13 +226,13 @@ export default async function LandingPage() {
             { key: "youtube_url", label: "YouTube", icon: "▶️" },
           ].map(({ key, label, icon }) =>
             s[key] ? (
-              <a
+              
                 key={key}
                 href={s[key]}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full hover:bg-white/30 transition text-sm font-medium"
-                >
+              >
                 {icon} {label}
               </a>
             ) : null
