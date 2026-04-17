@@ -222,15 +222,14 @@ export default async function LandingPage() {
           </div>
         </section>
       )}
-
-      <section className="py-10 bg-primary text-white text-center">
+<section className="py-10 bg-primary text-white text-center">
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
         <div className="flex justify-center gap-6 flex-wrap">
           {socialLinks.map(({ socialKey, label, icon }) => {
             const url = s[socialKey];
             if (!url) return null;
             return (
-              
+              <a
                 key={socialKey}
                 href={url}
                 target="_blank"
@@ -246,6 +245,4 @@ export default async function LandingPage() {
           © {new Date().getFullYear()} Akpu Community · Land of the Ancients
         </p>
       </section>
-    </>
-  );
-}
+      
