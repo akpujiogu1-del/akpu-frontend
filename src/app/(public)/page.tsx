@@ -245,4 +245,6 @@ export default async function LandingPage() {
           © {new Date().getFullYear()} Akpu Community · Land of the Ancients
         </p>
       </section>
-      
+    </>
+);
+}
