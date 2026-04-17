@@ -220,15 +220,15 @@ export default async function LandingPage() {
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
         <div className="flex justify-center gap-6 flex-wrap">
           {[
-            { key: "tiktok_url", label: "TikTok", icon: "🎵" },
-            { key: "facebook_url", label: "Facebook", icon: "👥" },
-            { key: "instagram_url", label: "Instagram", icon: "📸" },
-            { key: "youtube_url", label: "YouTube", icon: "▶️" },
-          ].map(({ key, label, icon }) =>
-            s[key] ? (
+            { socialKey: "tiktok_url", label: "TikTok", icon: "🎵" },
+            { socialKey: "facebook_url", label: "Facebook", icon: "👥" },
+            { socialKey: "instagram_url", label: "Instagram", icon: "📸" },
+            { socialKey: "youtube_url", label: "YouTube", icon: "▶️" },
+          ].map(({ socialKey, label, icon }) =>
+            s[socialKey] ? (
               
-                key={key}
-                href={s[key]}
+                key={socialKey}
+                href={s[socialKey]}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full hover:bg-white/30 transition text-sm font-medium"
