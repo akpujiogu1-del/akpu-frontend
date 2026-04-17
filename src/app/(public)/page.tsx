@@ -57,6 +57,13 @@ export default async function LandingPage() {
     .order("created_at", { ascending: false })
     .limit(4);
 
+  const socialLinks = [
+    { socialKey: "tiktok_url", label: "TikTok", icon: "🎵" },
+    { socialKey: "facebook_url", label: "Facebook", icon: "👥" },
+    { socialKey: "instagram_url", label: "Instagram", icon: "📸" },
+    { socialKey: "youtube_url", label: "YouTube", icon: "▶️" },
+  ];
+
   return (
     <>
       <Navbar session={session} />
@@ -215,15 +222,11 @@ export default async function LandingPage() {
           </div>
         </section>
       )}
-<section className="py-10 bg-primary text-white text-center">
+
+      <section className="py-10 bg-primary text-white text-center">
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
         <div className="flex justify-center gap-6 flex-wrap">
-          {[
-            { socialKey: "tiktok_url", label: "TikTok", icon: "🎵" },
-            { socialKey: "facebook_url", label: "Facebook", icon: "👥" },
-            { socialKey: "instagram_url", label: "Instagram", icon: "📸" },
-            { socialKey: "youtube_url", label: "YouTube", icon: "▶️" },
-          ].map(({ socialKey, label, icon }) => {
+          {socialLinks.map(({ socialKey, label, icon }) => {
             const url = s[socialKey];
             if (!url) return null;
             return (
@@ -243,3 +246,6 @@ export default async function LandingPage() {
           © {new Date().getFullYear()} Akpu Community · Land of the Ancients
         </p>
       </section>
+    </>
+  );
+}
