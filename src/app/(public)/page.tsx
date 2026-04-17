@@ -215,8 +215,7 @@ export default async function LandingPage() {
           </div>
         </section>
       )}
-
-      <section className="py-10 bg-primary text-white text-center">
+<section className="py-10 bg-primary text-white text-center">
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
         <div className="flex justify-center gap-6 flex-wrap">
           {[
@@ -224,24 +223,23 @@ export default async function LandingPage() {
             { socialKey: "facebook_url", label: "Facebook", icon: "👥" },
             { socialKey: "instagram_url", label: "Instagram", icon: "📸" },
             { socialKey: "youtube_url", label: "YouTube", icon: "▶️" },
-          ].map(({ socialKey, label, icon }) =>
-            s[socialKey] ? (
+          ].map(({ socialKey, label, icon }) => {
+            const url = s[socialKey];
+            if (!url) return null;
+            return (
               
                 key={socialKey}
-                href={s[socialKey]}
+                href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full hover:bg-white/30 transition text-sm font-medium"
               >
                 {icon} {label}
               </a>
-            ) : null
-          )}
+            );
+          })}
         </div>
         <p className="mt-6 text-xs text-primary-100">
           © {new Date().getFullYear()} Akpu Community · Land of the Ancients
         </p>
       </section>
-    </>
-  );
-}
