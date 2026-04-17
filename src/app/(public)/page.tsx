@@ -213,13 +213,13 @@ export default async function LandingPage() {
             { key: "youtube_url", label: "YouTube", icon: "▶️" },
           ].map(({ key, label, icon }) =>
             s[key] ? (
-              
+              <a
                 key={key}
                 href={s[key]}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full hover:bg-white/30 transition text-sm font-medium"
-              >
+                >
                 {icon} {label}
               </a>
             ) : null
