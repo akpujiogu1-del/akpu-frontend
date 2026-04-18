@@ -12,7 +12,6 @@ function toYTEmbed(url: string) {
 }
 
 export default async function LandingPage() {
-  // CRITICAL: Await cookies for Next.js 15 compatibility
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -27,14 +26,11 @@ export default async function LandingPage() {
     }
   );
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key,value");
-    
   const s: Record<string, string> = Object.fromEntries(
     (rows ?? []).map((r) => [r.key, r.value])
   );
@@ -45,9 +41,12 @@ export default async function LandingPage() {
     .is("deleted_at", null)
     .order("sort_order");
 
-  const hallOfFame = leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
-  const community = leaders?.filter((l) => l.leader_type === "community") ?? [];
-  const political = leaders?.filter((l) => l.leader_type === "political") ?? [];
+  const hallOfFame =
+    leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
+  const community =
+    leaders?.filter((l) => l.leader_type === "community") ?? [];
+  const political =
+    leaders?.filter((l) => l.leader_type === "political") ?? [];
 
   const { data: news } = await supabase
     .from("news")
@@ -56,20 +55,13 @@ export default async function LandingPage() {
     .order("created_at", { ascending: false })
     .limit(4);
 
-  const socialLinks = [
-    { socialKey: "tiktok_url", label: "TikTok", icon: "🎵" },
-    { socialKey: "facebook_url", label: "Facebook", icon: "👥" },
-    { socialKey: "instagram_url", label: "Instagram", icon: "📸" },
-    { socialKey: "youtube_url", label: "YouTube", icon: "▶️" },
-  ];
-
   return (
     <>
       <Navbar session={session} />
       <AnnouncementBanner />
 
       <section className="grid md:grid-cols-2 gap-6 p-6 md:p-10 bg-primary-50">
-        <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
+        <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
           {s.landing_video_url ? (
             <iframe
               src={toYTEmbed(s.landing_video_url)}
@@ -78,7 +70,7 @@ export default async function LandingPage() {
               title="Akpu Community Video"
             />
           ) : (
-            <div className="w-full h-full bg-primary-100 flex items-center justify-center text-primary">
+            <div className="w-full h-full bg-primary-100 flex items-center justify-center text-primary font-semibold">
               Video Coming Soon
             </div>
           )}
@@ -96,7 +88,7 @@ export default async function LandingPage() {
               title="Akpu Map"
             />
           ) : (
-            <div className="w-full h-64 rounded-xl bg-primary-50 border-2 border-dashed border-primary flex items-center justify-center text-primary-light">
+            <div className="w-full h-64 rounded-xl bg-primary-50 border-2 border-dashed border-primary flex items-center justify-center text-primary-light font-semibold">
               Map not configured yet
             </div>
           )}
@@ -144,7 +136,7 @@ export default async function LandingPage() {
           <h2 className="text-2xl font-bold text-center text-primary mb-8">
             Our Leaders
           </h2>
-          <div className="max-w-6xl mx-auto px-6 flex gap-4 overflow-x-auto pb-4">
+          <div className="max-w-6xl mx-auto px-6 flex gap-4 overflow-x-auto pb-2">
             {community.map((l) => (
               <div key={l.id} className="min-w-[160px] bg-primary-50 rounded-xl p-4 text-center shrink-0">
                 <img
@@ -190,11 +182,7 @@ export default async function LandingPage() {
             {news!.map((n) => (
               <div key={n.id} className="rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition">
                 {n.image_url && (
-                  <img
-                    src={n.image_url}
-                    alt={n.title}
-                    className="w-full h-36 object-cover"
-                  />
+                  <img src={n.image_url} alt={n.title} className="w-full h-36 object-cover" />
                 )}
                 <div className="p-4">
                   <p className="font-semibold text-sm text-primary">{n.title}</p>
@@ -209,21 +197,24 @@ export default async function LandingPage() {
       <section className="py-10 bg-primary text-white text-center">
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
         <div className="flex justify-center gap-6 flex-wrap">
-          {socialLinks.map(({ socialKey, label, icon }) => {
-            const url = s[socialKey];
-            if (!url) return null;
-            return (
-              <a
-                key={socialKey}
-                href={url}
+          {[
+            { key: "tiktok_url", label: "TikTok", icon: "🎵" },
+            { key: "facebook_url", label: "Facebook", icon: "👥" },
+            { key: "instagram_url", label: "Instagram", icon: "📸" },
+            { key: "youtube_url", label: "YouTube", icon: "▶️" },
+          ].map(({ key, label, icon }) =>
+            s[key] ? (
+              
+                key={key}
+                href={s[key]}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full hover:bg-white/30 transition text-sm font-medium"
               >
                 {icon} {label}
               </a>
-            );
-          })}
+            ) : null
+          )}
         </div>
         <p className="mt-6 text-xs text-primary-100">
           © {new Date().getFullYear()} Akpu Community · Land of the Ancients
