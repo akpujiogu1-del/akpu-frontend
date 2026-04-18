@@ -52,4 +52,4 @@ export async function accessFile(
     .createSignedUrl(storagePath, 60);
 
   return data?.signedUrl;
-}s
+}
