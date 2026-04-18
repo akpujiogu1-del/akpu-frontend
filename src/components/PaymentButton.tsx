@@ -26,55 +26,25 @@ export default function PaymentButton({
 
   const handlePay = async () => {
     setLoading(true);
-    const reference = `AKPU-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)
-      .toUpperCase()}`;
-
-    const { error } = await supabase.from("payments").insert({
-      user_id: userId,
-      group_id: groupId ?? null,
-      category,
-      amount,
-      reference,
-      status: "pending",
-    });
-
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-      return;
-    }
-
     try {
-      // @ts-ignore
-      const PaystackPop = (await import("@paystack/inline-js")).default;
-      const popup = new PaystackPop();
-      popup.newTransaction({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email,
-        amount: amount * 100,
-        ref: reference,
-        currency: "NGN",
-        metadata: { userId, groupId, category },
-        onSuccess: async (transaction: any) => {
-          const res = await fetch("/api/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ reference: transaction.reference }),
-          });
-          const data = await res.json();
-          if (data.success) toast.success("Payment successful!");
-          else toast.error("Payment verification failed. Contact admin.");
-          setLoading(false);
-        },
-        onCancel: () => {
-          toast.error("Payment cancelled.");
-          setLoading(false);
-        },
+      const reference = `AKPU-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)
+        .toUpperCase()}`;
+
+      await supabase.from("payments").insert({
+        user_id: userId,
+        group_id: groupId ?? null,
+        category,
+        amount,
+        reference,
+        status: "pending",
       });
+
+      toast.success("Payment recorded. Integration coming soon.");
     } catch {
-      toast.error("Payment system unavailable. Try again.");
+      toast.error("Something went wrong. Try again.");
+    } finally {
       setLoading(false);
     }
   };
