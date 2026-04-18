@@ -9,7 +9,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
+  // 1. FIX: Await the cookie store for Next.js 15
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,29 +24,24 @@ export default async function DashboardLayout({
     }
   );
 
-  // 1. Auth Guard
+  // 2. Auth Guard
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (!session) redirect("/auth/login");
 
-  // 2. Fetch Detailed Profile with Roles
+  // 3. Fetch Detailed Profile with Roles
   const { data: profile } = await supabase
     .from("users")
     .select("*, user_roles(role)")
     .eq("id", session.user.id)
     .single();
 
-  // 3. Status Guard (Security Enforcement)
+  // 4. Status Guard (Security Enforcement)
   if (profile?.status === "suspended") {
     redirect("/suspended");
   }
-
-  // 4. Verification Check (Optional: Redirect if not approved yet)
-  // if (profile?.status === "pending" && !requestingVerificationPage) {
-  //   redirect("/verification-pending");
-  // }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -63,8 +59,6 @@ export default async function DashboardLayout({
           {children}
         </div>
       </main>
-
-      {/* Optional: Mobile Bottom Nav could go here for a native feel */}
     </div>
   );
 }
