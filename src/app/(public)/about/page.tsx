@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
 
 export default async function AboutPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
