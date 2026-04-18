@@ -11,6 +11,13 @@ function toYTEmbed(url: string) {
   return id ? `https://www.youtube.com/embed/${id}` : url;
 }
 
+const SOCIAL = [
+  { key: "tiktok_url",    label: "TikTok",    icon: "🎵" },
+  { key: "facebook_url",  label: "Facebook",  icon: "👥" },
+  { key: "instagram_url", label: "Instagram", icon: "📸" },
+  { key: "youtube_url",   label: "YouTube",   icon: "▶️" },
+];
+
 export default async function LandingPage() {
   const cookieStore = await cookies();
 
@@ -19,8 +26,15 @@ export default async function LandingPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
         },
       },
     }
@@ -31,6 +45,7 @@ export default async function LandingPage() {
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key,value");
+
   const s: Record<string, string> = Object.fromEntries(
     (rows ?? []).map((r) => [r.key, r.value])
   );
@@ -41,12 +56,9 @@ export default async function LandingPage() {
     .is("deleted_at", null)
     .order("sort_order");
 
-  const hallOfFame =
-    leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
-  const community =
-    leaders?.filter((l) => l.leader_type === "community") ?? [];
-  const political =
-    leaders?.filter((l) => l.leader_type === "political") ?? [];
+  const hallOfFame = leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
+  const community  = leaders?.filter((l) => l.leader_type === "community")    ?? [];
+  const political  = leaders?.filter((l) => l.leader_type === "political")    ?? [];
 
   const { data: news } = await supabase
     .from("news")
@@ -56,10 +68,11 @@ export default async function LandingPage() {
     .limit(4);
 
   return (
-    <>
+    <div>
       <Navbar session={session} />
       <AnnouncementBanner />
 
+      {/* Hero: Video + Map */}
       <section className="grid md:grid-cols-2 gap-6 p-6 md:p-10 bg-primary-50">
         <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
           {s.landing_video_url ? (
@@ -88,13 +101,14 @@ export default async function LandingPage() {
               title="Akpu Map"
             />
           ) : (
-            <div className="w-full h-64 rounded-xl bg-primary-50 border-2 border-dashed border-primary flex items-center justify-center text-primary-light font-semibold">
+            <div className="w-full h-64 rounded-xl bg-primary-50 border-2 border-dashed border-primary flex items-center justify-center text-primary font-semibold">
               Map not configured yet
             </div>
           )}
         </div>
       </section>
 
+      {/* Welcome CTA */}
       <section className="text-center py-16 bg-white">
         <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-2">
           Welcome to Akpu
@@ -110,6 +124,7 @@ export default async function LandingPage() {
         </Link>
       </section>
 
+      {/* Hall of Fame */}
       {hallOfFame.length > 0 && (
         <section className="py-12 bg-primary-50">
           <h2 className="text-2xl font-bold text-center text-primary mb-8">
@@ -131,6 +146,7 @@ export default async function LandingPage() {
         </section>
       )}
 
+      {/* Community Leaders */}
       {community.length > 0 && (
         <section className="py-12 bg-white">
           <h2 className="text-2xl font-bold text-center text-primary mb-8">
@@ -152,6 +168,7 @@ export default async function LandingPage() {
         </section>
       )}
 
+      {/* Political Leaders */}
       {political.length > 0 && (
         <section className="py-12 bg-secondary-50">
           <h2 className="text-2xl font-bold text-center text-secondary mb-8">
@@ -173,16 +190,21 @@ export default async function LandingPage() {
         </section>
       )}
 
+      {/* Latest News */}
       {(news?.length ?? 0) > 0 && (
         <section className="py-12 bg-white">
           <h2 className="text-2xl font-bold text-center text-primary mb-8">
             Latest News
           </h2>
           <div className="max-w-6xl mx-auto px-6 grid sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {news!.map((n) => (
+            {(news ?? []).map((n) => (
               <div key={n.id} className="rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition">
                 {n.image_url && (
-                  <img src={n.image_url} alt={n.title} className="w-full h-36 object-cover" />
+                  <img
+                    src={n.image_url}
+                    alt={n.title}
+                    className="w-full h-36 object-cover"
+                  />
                 )}
                 <div className="p-4">
                   <p className="font-semibold text-sm text-primary">{n.title}</p>
@@ -194,32 +216,31 @@ export default async function LandingPage() {
         </section>
       )}
 
+      {/* Social Handles Footer */}
       <section className="py-10 bg-primary text-white text-center">
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
-        <div className="flex justify-center gap-6 flex-wrap">
-          {[
-            { key: "tiktok_url", label: "TikTok", icon: "🎵" },
-            { key: "facebook_url", label: "Facebook", icon: "👥" },
-            { key: "instagram_url", label: "Instagram", icon: "📸" },
-            { key: "youtube_url", label: "YouTube", icon: "▶️" },
-          ].map(({ key, label, icon }) =>
-            s[key] ? (
+        <div className="flex justify-center gap-4 flex-wrap">
+          {SOCIAL.map(({ key, label, icon }) => {
+            const url = s[key];
+            if (!url) return null;
+            return (
               
                 key={key}
-                href={s[key]}
+                href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full hover:bg-white/30 transition text-sm font-medium"
               >
-                {icon} {label}
+                <span>{icon}</span>
+                <span>{label}</span>
               </a>
-            ) : null
-          )}
+            );
+          })}
         </div>
         <p className="mt-6 text-xs text-primary-100">
-          © {new Date().getFullYear()} Akpu Community · Land of the Ancients
+          {`© ${new Date().getFullYear()} Akpu Community · Land of the Ancients`}
         </p>
       </section>
-    </>
+    </div>
   );
 }
