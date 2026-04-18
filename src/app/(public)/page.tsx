@@ -224,7 +224,7 @@ export default async function LandingPage() {
             const url = s[key];
             if (!url) return null;
             return (
-              
+              <a
                 key={key}
                 href={url}
                 target="_blank"
