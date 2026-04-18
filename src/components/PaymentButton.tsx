@@ -43,44 +43,51 @@ export default function PaymentButton({
       return;
     }
 
-    const PaystackPop = (await import("@paystack/inline-js")).default;
-    const popup = new PaystackPop();
-    popup.newTransaction({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
-      email,
-      amount: amount * 100,
-      ref: reference,
-      currency: "NGN",
-      metadata: { userId, groupId, category },
+    try {
+      // The "as any" on the string prevents TypeScript from checking node_modules
+      const PaystackModule = await import("@paystack/inline-js" as any);
+      const PaystackPop = PaystackModule.default;
+      const popup = new PaystackPop();
 
-      onSuccess: async (transaction: any) => {
-        const res = await fetch("/api/verify-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reference: transaction.reference }),
-        });
-        const data = await res.json();
-        if (data.success) toast.success("Payment successful! ✅");
-        else toast.error("Payment verification failed. Contact admin.");
-        setLoading(false);
-      },
+      popup.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
+        email,
+        amount: amount * 100,
+        ref: reference,
+        currency: "NGN",
+        metadata: { userId, groupId, category },
 
-      onCancel: () => {
-        toast.error("Payment cancelled.");
-        setLoading(false);
-      },
-    });
+        onSuccess: async (transaction: any) => {
+          const res = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reference: transaction.reference }),
+          });
+          const data = await res.json();
+          if (data.success) toast.success("Payment successful! ✅");
+          else toast.error("Payment verification failed.");
+          setLoading(false);
+        },
+
+        onCancel: () => {
+          toast.error("Payment cancelled.");
+          setLoading(false);
+        },
+      });
+    } catch (err) {
+      console.error("Paystack load error:", err);
+      toast.error("Could not load payment gateway.");
+      setLoading(false);
+    }
   };
 
   return (
     <button
       onClick={handlePay}
       disabled={loading}
-      className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-60"
+      className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all disabled:opacity-60"
     >
-      {loading
-        ? "Processing…"
-        : label ?? `Pay ₦${amount.toLocaleString()} (${category})`}
+      {loading ? "Processing..." : label ?? `Pay ₦${amount.toLocaleString()}`}
     </button>
   );
 }
