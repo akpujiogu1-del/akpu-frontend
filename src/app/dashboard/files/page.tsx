@@ -13,84 +13,147 @@ export default function FilesPage() {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        loadGroups(data.user.id);
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        loadGroups(user.id);
       }
-    });
+    };
+    init();
   }, []);
 
   async function loadGroups(uid: string) {
     const { data: memberships } = await supabase
-      .from("group_members").select("group_id, groups(id, name, type)")
-      .eq("user_id", uid).eq("status", "approved");
+      .from("group_members")
+      .select("group_id, groups(id, name, type)")
+      .eq("user_id", uid)
+      .eq("status", "approved");
+      
     const grps = (memberships ?? []).map((m: any) => m.groups).filter(Boolean);
     setGroups(grps);
-    if (grps.length > 0) { setSelectedGroup(grps[0].id); loadFiles(grps[0].id); }
+    
+    if (grps.length > 0) { 
+      setSelectedGroup(grps[0].id); 
+      loadFiles(grps[0].id); 
+    }
   }
 
   async function loadFiles(groupId: string) {
-    const { data } = await supabase.from("files").select("*")
-      .eq("group_id", groupId).is("deleted_at", null).order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("files")
+      .select("*")
+      .eq("group_id", groupId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+    
     setFiles(data ?? []);
+    setPasswords({}); // Clear passwords when switching groups
   }
 
   async function handleAccess(fileId: string) {
     const password = passwords[fileId];
-    if (!password) return toast.error("Enter the file password");
+    if (!password) return toast.error("Please enter the file password");
+    
     setLoading(p => ({ ...p, [fileId]: true }));
     try {
       const url = await accessFile(fileId, password, userId);
-      if (url) { window.open(url, "_blank"); toast.success("File opened!"); }
-      else toast.error("Incorrect password");
-    } catch (err: any) { toast.error(err.message); }
-    setLoading(p => ({ ...p, [fileId]: false }));
+      if (url) { 
+        window.open(url, "_blank"); 
+        toast.success("Document decrypted successfully!"); 
+      } else {
+        toast.error("Invalid password for this file");
+      }
+    } catch (err: any) { 
+      toast.error(err.message || "Failed to access file"); 
+    } finally {
+      setLoading(p => ({ ...p, [fileId]: false }));
+    }
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-primary mb-6">Group Files</h1>
+    <div className="max-w-4xl mx-auto py-6 px-2">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Secure Vault</h1>
+          <p className="text-gray-500 text-xs mt-1 font-medium uppercase tracking-wider">
+            Protected Community Documents
+          </p>
+        </div>
+        <div className="bg-primary/10 p-2 rounded-2xl">
+          <span className="text-2xl">📁</span>
+        </div>
+      </div>
+
       {groups.length === 0 ? (
-        <div className="bg-white rounded-xl border p-8 text-center">
-          <p className="text-4xl mb-3">📁</p>
-          <p className="text-gray-500 font-semibold">You are not a member of any group yet.</p>
-          <p className="text-gray-400 text-sm mt-1">Join a group from the Umunna page to access files.</p>
+        <div className="bg-white rounded-[2rem] border border-dashed border-gray-200 p-12 text-center">
+          <p className="text-5xl mb-4 grayscale opacity-50">📂</p>
+          <p className="text-gray-900 font-bold">No Groups Found</p>
+          <p className="text-gray-400 text-sm mt-2 max-w-xs mx-auto">
+            You must be an approved member of a group to access its shared documents.
+          </p>
         </div>
       ) : (
         <>
-          <div className="mb-4">
-            <select value={selectedGroup}
-              onChange={e => { setSelectedGroup(e.target.value); loadFiles(e.target.value); }}
-              className="border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary">
-              {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+          {/* Group Tab Switcher */}
+          <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+            {groups.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => { setSelectedGroup(g.id); loadFiles(g.id); }}
+                className={`whitespace-nowrap px-6 py-3 rounded-2xl text-xs font-bold transition-all ${
+                  selectedGroup === g.id 
+                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
+                    : "bg-white text-gray-400 hover:text-gray-600 border border-gray-100"
+                }`}
+              >
+                {g.name}
+              </button>
+            ))}
           </div>
+
           {files.length === 0 ? (
-            <div className="bg-white rounded-xl border p-8 text-center">
-              <p className="text-4xl mb-3">📄</p>
-              <p className="text-gray-500">No files uploaded for this group yet.</p>
+            <div className="bg-white rounded-[2rem] border border-gray-100 p-12 text-center mt-4">
+              <p className="text-4xl mb-3 opacity-20">📄</p>
+              <p className="text-gray-400 font-medium">No files available for this group.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-4 mt-6">
               {files.map(f => (
-                <div key={f.id} className="bg-white rounded-xl border p-5">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                      <p className="font-semibold text-primary flex items-center gap-2">📄 {f.name}</p>
-                      <p className="text-xs text-gray-400 mt-1">{new Date(f.created_at).toLocaleString()}</p>
+                <div key={f.id} className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                        📄
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 text-lg">{f.name}</p>
+                        <p className="text-[10px] font-black text-secondary uppercase tracking-widest mt-1">
+                          Added: {new Date(f.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs bg-secondary-50 text-secondary px-2 py-1 rounded-full border border-secondary-100 font-semibold">🔒 Password Protected</span>
+                    <div className="hidden sm:block">
+                      <span className="text-[9px] font-black bg-secondary/10 text-secondary px-3 py-1.5 rounded-full border border-secondary/20 uppercase tracking-tighter">
+                        🔒 Encrypted
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex gap-2 mt-4">
-                    <input type="password"
+
+                  <div className="bg-gray-50 rounded-[1.5rem] p-2 flex gap-2">
+                    <input 
+                      type="password"
                       value={passwords[f.id] ?? ""}
                       onChange={e => setPasswords(p => ({ ...p, [f.id]: e.target.value }))}
-                      placeholder="Enter file password"
-                      className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary" />
-                    <button onClick={() => handleAccess(f.id)} disabled={loading[f.id]}
-                      className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary-dark disabled:opacity-60">
-                      {loading[f.id] ? "Opening..." : "Open File"}
+                      placeholder="Security Password"
+                      className="flex-1 bg-transparent border-none px-4 py-2 text-sm outline-none placeholder:text-gray-300" 
+                    />
+                    <button 
+                      onClick={() => handleAccess(f.id)} 
+                      disabled={loading[f.id]}
+                      className="bg-primary text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/10"
+                    >
+                      {loading[f.id] ? "Decrypting..." : "Access File"}
                     </button>
                   </div>
                 </div>

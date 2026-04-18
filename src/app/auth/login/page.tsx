@@ -14,51 +14,97 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: email.trim(), 
+        password 
+      });
+
       if (error) throw error;
+
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      
+      // Refresh the router to sync the auth state with the server
       router.refresh();
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (err: any) {
-      toast.error(err.message || "Login failed");
+      toast.error(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-primary-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <p className="text-4xl mb-2">🏘️</p>
-          <h1 className="text-2xl font-extrabold text-primary">Akpu Community</h1>
-          <p className="text-secondary text-sm">Land of the Ancients</p>
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4">
+      <div className="bg-white rounded-[2rem] shadow-xl shadow-primary/5 p-10 w-full max-w-md border border-gray-100">
+        {/* Branding Section */}
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4 rotate-3">
+            <span className="text-4xl -rotate-3">🏘️</span>
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Akpu Community</h1>
+          <p className="text-secondary font-bold text-xs uppercase tracking-widest mt-1">
+            Land of the Ancients
+          </p>
         </div>
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Sign In</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary text-sm" />
+            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
+              Email Address
+            </label>
+            <input 
+              type="email" 
+              required 
+              value={email} 
+              onChange={e => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
+            />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary text-sm" />
+            <div className="flex justify-between items-center mb-2 ml-1">
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">
+                Password
+              </label>
+              <Link href="/auth/reset-password" size="text-[10px]" className="text-secondary font-bold hover:underline">
+                FORGOT?
+              </Link>
+            </div>
+            <input 
+              type="password" 
+              required 
+              value={password} 
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
+            />
           </div>
-          <button type="submit" disabled={loading}
-            className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-60">
-            {loading ? "Signing in..." : "Sign In"}
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-[0.98] disabled:opacity-60"
+          >
+            {loading ? "Verifying..." : "Sign In to Portal"}
           </button>
         </form>
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Not a member?{" "}
-          <Link href="/auth/register" className="text-secondary font-semibold hover:underline">Register</Link>
-        </p>
-        <p className="text-center mt-2">
-          <Link href="/" className="text-xs text-gray-400 hover:underline">← Back to home</Link>
-        </p>
+
+        <div className="mt-8 pt-8 border-t border-gray-50 text-center space-y-3">
+          <p className="text-sm text-gray-500">
+            Not a member?{" "}
+            <Link href="/auth/register" className="text-secondary font-black hover:underline">
+              Join the Community
+            </Link>
+          </p>
+          
+          <Link href="/" className="inline-block text-[11px] font-bold text-gray-300 hover:text-gray-500 uppercase tracking-tighter transition-colors">
+            ← Return to Home Page
+          </Link>
+        </div>
       </div>
     </div>
   );

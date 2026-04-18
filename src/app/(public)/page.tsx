@@ -12,7 +12,8 @@ function toYTEmbed(url: string) {
 }
 
 export default async function LandingPage() {
-  const cookieStore = cookies();
+  // CRITICAL: Await cookies for Next.js 15 compatibility
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +34,7 @@ export default async function LandingPage() {
   const { data: rows } = await supabase
     .from("site_settings")
     .select("key,value");
+    
   const s: Record<string, string> = Object.fromEntries(
     (rows ?? []).map((r) => [r.key, r.value])
   );
@@ -43,12 +45,9 @@ export default async function LandingPage() {
     .is("deleted_at", null)
     .order("sort_order");
 
-  const hallOfFame =
-    leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
-  const community =
-    leaders?.filter((l) => l.leader_type === "community") ?? [];
-  const political =
-    leaders?.filter((l) => l.leader_type === "political") ?? [];
+  const hallOfFame = leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
+  const community = leaders?.filter((l) => l.leader_type === "community") ?? [];
+  const political = leaders?.filter((l) => l.leader_type === "political") ?? [];
 
   const { data: news } = await supabase
     .from("news")
@@ -70,7 +69,7 @@ export default async function LandingPage() {
       <AnnouncementBanner />
 
       <section className="grid md:grid-cols-2 gap-6 p-6 md:p-10 bg-primary-50">
-        <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
+        <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
           {s.landing_video_url ? (
             <iframe
               src={toYTEmbed(s.landing_video_url)}
@@ -126,10 +125,7 @@ export default async function LandingPage() {
           </h2>
           <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
             {hallOfFame.map((l) => (
-              <div
-                key={l.id}
-                className="bg-white rounded-xl shadow p-4 text-center"
-              >
+              <div key={l.id} className="bg-white rounded-xl shadow p-4 text-center">
                 <img
                   src={l.photo_url ?? "/avatar-placeholder.png"}
                   alt={l.name}
@@ -148,12 +144,9 @@ export default async function LandingPage() {
           <h2 className="text-2xl font-bold text-center text-primary mb-8">
             Our Leaders
           </h2>
-          <div className="max-w-6xl mx-auto px-6 flex gap-4 overflow-x-auto pb-2">
+          <div className="max-w-6xl mx-auto px-6 flex gap-4 overflow-x-auto pb-4">
             {community.map((l) => (
-              <div
-                key={l.id}
-                className="min-w-[160px] bg-primary-50 rounded-xl p-4 text-center shrink-0"
-              >
+              <div key={l.id} className="min-w-[160px] bg-primary-50 rounded-xl p-4 text-center shrink-0">
                 <img
                   src={l.photo_url ?? "/avatar-placeholder.png"}
                   alt={l.name}
@@ -174,10 +167,7 @@ export default async function LandingPage() {
           </h2>
           <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-6">
             {political.map((l) => (
-              <div
-                key={l.id}
-                className="bg-white rounded-xl shadow p-4 text-center"
-              >
+              <div key={l.id} className="bg-white rounded-xl shadow p-4 text-center">
                 <img
                   src={l.photo_url ?? "/avatar-placeholder.png"}
                   alt={l.name}
@@ -198,10 +188,7 @@ export default async function LandingPage() {
           </h2>
           <div className="max-w-6xl mx-auto px-6 grid sm:grid-cols-2 md:grid-cols-4 gap-6">
             {news!.map((n) => (
-              <div
-                key={n.id}
-                className="rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition"
-              >
+              <div key={n.id} className="rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition">
                 {n.image_url && (
                   <img
                     src={n.image_url}
@@ -210,19 +197,16 @@ export default async function LandingPage() {
                   />
                 )}
                 <div className="p-4">
-                  <p className="font-semibold text-sm text-primary">
-                    {n.title}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                    {n.body}
-                  </p>
+                  <p className="font-semibold text-sm text-primary">{n.title}</p>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{n.body}</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
       )}
-<section className="py-10 bg-primary text-white text-center">
+
+      <section className="py-10 bg-primary text-white text-center">
         <p className="font-semibold mb-4 text-lg">Social Handles</p>
         <div className="flex justify-center gap-6 flex-wrap">
           {socialLinks.map(({ socialKey, label, icon }) => {
@@ -246,5 +230,5 @@ export default async function LandingPage() {
         </p>
       </section>
     </>
-);
+  );
 }
