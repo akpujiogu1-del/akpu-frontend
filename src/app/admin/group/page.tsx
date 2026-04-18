@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
@@ -39,7 +39,6 @@ export default function GroupAdminPage() {
 
     let query = supabase.from("groups").select("*").is("deleted_at", null).order("name");
     
-    // If they have specific scope, filter by it. Otherwise, if they are super admin, they see all.
     if (scopeIds.length > 0) {
       query = query.in("id", scopeIds);
     }
@@ -114,6 +113,8 @@ export default function GroupAdminPage() {
         method: "POST",
         body: JSON.stringify({ password: fileForm.password }),
       });
+      
+      if (!hashRes.ok) throw new Error("Encryption failed");
       const { hash } = await hashRes.json();
 
       await supabase.from("files").insert({
@@ -128,10 +129,40 @@ export default function GroupAdminPage() {
       setFileForm({ name: "", password: "" });
       setFileToUpload(null);
       loadGroupData();
-    } catch (err) {
-      toast.error("File upload failed");
+    } catch (err: any) {
+      toast.error(err.message || "File upload failed");
     } finally {
       setLoading(false);
+    }
+  }
+
+  /** * FIX: Added missing deleteFile function 
+   */
+  async function deleteFile(fileId: string) {
+    if (!confirm("Are you sure you want to permanently delete this document?")) return;
+    
+    try {
+      // 1. Get storage path from DB first
+      const { data: fileRecord } = await supabase
+        .from("files")
+        .select("storage_path")
+        .eq("id", fileId)
+        .single();
+
+      // 2. Delete physical file from storage
+      if (fileRecord?.storage_path) {
+        await supabase.storage.from("group-files").remove([fileRecord.storage_path]);
+      }
+
+      // 3. Mark as deleted in DB (or hard delete)
+      const { error } = await supabase.from("files").delete().eq("id", fileId);
+      
+      if (error) throw error;
+      
+      toast.success("File removed");
+      setFiles(prev => prev.filter(f => f.id !== fileId));
+    } catch (err) {
+      toast.error("Delete failed");
     }
   }
 
@@ -140,7 +171,7 @@ export default function GroupAdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
-      <div className="bg-primary text-white px-6 py-6 shadow-md">
+      <div className="bg-[#1a1a1a] text-white px-6 py-6 shadow-md">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold flex items-center gap-2">🛡️ Group Management</h1>
           <select 
@@ -157,11 +188,11 @@ export default function GroupAdminPage() {
       <div className="max-w-5xl mx-auto px-4 mt-6">
         {!selectedGroup ? (
           <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed">
-            <p className="text-gray-400">Please select a group to manage members and content</p>
+            <p className="text-gray-400 font-medium">Please select a group to manage members and content</p>
           </div>
         ) : (
           <>
-            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+            <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
               {[
                 { id: "members", label: `Members (${pending.length} pending)` },
                 { id: "polls", label: "Voting & Polls" },
@@ -170,7 +201,7 @@ export default function GroupAdminPage() {
                 <button 
                   key={t.id} 
                   onClick={() => setTab(t.id)}
-                  className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-sm whitespace-nowrap ${tab === t.id ? "bg-secondary text-white" : "bg-white border text-gray-500 hover:border-secondary"}`}
+                  className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-sm whitespace-nowrap ${tab === t.id ? "bg-primary text-white" : "bg-white border text-gray-500 hover:border-primary/50"}`}
                 >
                   {t.label}
                 </button>
@@ -180,18 +211,18 @@ export default function GroupAdminPage() {
             {tab === "members" && (
               <div className="space-y-6">
                 {pending.length > 0 && (
-                  <div className="bg-secondary/5 rounded-2xl border border-secondary/20 p-6">
-                    <h3 className="font-black text-secondary uppercase tracking-wider text-xs mb-4">Membership Requests</h3>
+                  <div className="bg-orange-50 rounded-2xl border border-orange-100 p-6">
+                    <h3 className="font-black text-orange-600 uppercase tracking-wider text-[10px] mb-4">Membership Requests</h3>
                     <div className="grid gap-3">
                       {pending.map(m => (
-                        <div key={m.id} className="bg-white rounded-xl p-4 flex justify-between items-center shadow-sm border border-secondary/10">
+                        <div key={m.id} className="bg-white rounded-xl p-4 flex justify-between items-center shadow-sm border border-orange-200/50">
                           <div>
-                            <p className="font-bold text-gray-900">{m.users?.full_name}</p>
-                            <p className="text-xs text-gray-500">{m.users?.email} • {m.users?.phone}</p>
+                            <p className="font-bold text-gray-900 text-sm">{m.users?.full_name}</p>
+                            <p className="text-[10px] text-gray-500 font-medium">{m.users?.email} • {m.users?.phone}</p>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => updateMember(m.id, "approved")} className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-primary-dark">Approve</button>
-                            <button onClick={() => updateMember(m.id, "denied")} className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600">Decline</button>
+                            <button onClick={() => updateMember(m.id, "approved")} className="bg-primary text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary-dark transition">Approve</button>
+                            <button onClick={() => updateMember(m.id, "denied")} className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-600 transition">Decline</button>
                           </div>
                         </div>
                       ))}
@@ -200,20 +231,20 @@ export default function GroupAdminPage() {
                 )}
 
                 <div className="bg-white rounded-2xl border p-6 shadow-sm">
-                  <h3 className="font-bold text-primary mb-4">Active Roster ({approved.length})</h3>
-                  <div className="divide-y">
+                  <h3 className="font-black text-gray-400 uppercase tracking-widest text-[10px] mb-6">Active Roster ({approved.length})</h3>
+                  <div className="divide-y divide-gray-50">
                     {approved.map(m => (
-                      <div key={m.id} className="py-4 flex justify-between items-center">
+                      <div key={m.id} className="py-4 flex justify-between items-center group">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                          <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-primary font-black text-xs border border-gray-100">
                             {m.users?.full_name?.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-semibold text-sm">{m.users?.full_name}</p>
+                            <p className="font-bold text-gray-900 text-sm">{m.users?.full_name}</p>
                             <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">{m.role || "Member"}</p>
                           </div>
                         </div>
-                        <button onClick={() => updateMember(m.id, "suspended")} className="text-[10px] font-black text-orange-600 hover:underline uppercase tracking-tighter">Suspend Access</button>
+                        <button onClick={() => updateMember(m.id, "suspended")} className="opacity-0 group-hover:opacity-100 text-[10px] font-black text-orange-600 hover:underline uppercase tracking-tighter transition-opacity">Suspend Access</button>
                       </div>
                     ))}
                   </div>
@@ -225,13 +256,13 @@ export default function GroupAdminPage() {
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-1">
                   <div className="bg-white rounded-2xl border p-5 sticky top-6 shadow-sm">
-                    <h3 className="font-bold text-primary mb-4 text-sm">Create New Poll</h3>
+                    <h3 className="font-black text-gray-900 mb-4 text-[10px] uppercase tracking-[0.2em]">New Community Poll</h3>
                     <div className="space-y-4">
                       <input 
                         value={pollForm.question} 
                         onChange={e => setPollForm(p => ({ ...p, question: e.target.value }))}
                         placeholder="What is the question?" 
-                        className="w-full border-b py-2 text-sm outline-none focus:border-primary" 
+                        className="w-full border-b py-2 text-sm outline-none focus:border-primary transition-colors font-medium" 
                       />
                       <div className="space-y-2">
                         {pollForm.options.map((opt, i) => (
@@ -244,29 +275,29 @@ export default function GroupAdminPage() {
                               setPollForm(p => ({ ...p, options: o }));
                             }}
                             placeholder={`Option ${i + 1}`} 
-                            className="w-full bg-gray-50 rounded-lg px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-primary" 
+                            className="w-full bg-gray-50 rounded-lg px-3 py-2.5 text-xs outline-none focus:ring-1 focus:ring-primary border border-transparent focus:bg-white transition-all" 
                           />
                         ))}
                       </div>
                       <button 
                         onClick={() => setPollForm(p => ({ ...p, options: [...p.options, ""] }))}
-                        className="text-[10px] font-bold text-primary hover:text-primary-dark transition"
+                        className="text-[10px] font-black text-primary hover:text-primary-dark transition tracking-widest"
                       >
                         + ADD ANOTHER OPTION
                       </button>
                       <div className="pt-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase block mb-1">Closing Date</label>
+                        <label className="text-[9px] font-black text-gray-400 uppercase block mb-2 tracking-widest">Closing Date</label>
                         <input 
                           type="datetime-local" 
                           value={pollForm.ends_at} 
                           onChange={e => setPollForm(p => ({ ...p, ends_at: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2 text-xs" 
+                          className="w-full border rounded-lg px-3 py-2 text-xs font-medium" 
                         />
                       </div>
                       <button 
                         onClick={createPoll} 
                         disabled={loading}
-                        className="w-full bg-primary text-white py-3 rounded-xl text-sm font-bold hover:shadow-lg disabled:opacity-50 transition-all"
+                        className="w-full bg-primary text-white py-4 rounded-xl text-xs font-black uppercase tracking-[0.2em] hover:shadow-xl disabled:opacity-50 transition-all"
                       >
                         {loading ? "Publishing..." : "Publish Poll"}
                       </button>
@@ -282,23 +313,23 @@ export default function GroupAdminPage() {
                     const isExpired = new Date(p.ends_at) < new Date();
 
                     return (
-                      <div key={p.id} className="bg-white rounded-2xl border p-6 shadow-sm relative overflow-hidden">
-                        {isExpired && <div className="absolute top-0 right-0 bg-gray-100 text-gray-500 text-[10px] px-3 py-1 font-bold rounded-bl-lg uppercase">Closed</div>}
-                        <p className="font-bold text-gray-800 mb-1">{p.question}</p>
-                        <p className="text-[10px] text-gray-400 mb-6 uppercase tracking-widest font-bold">Total Votes: {total}</p>
+                      <div key={p.id} className="bg-white rounded-2xl border p-6 shadow-sm relative overflow-hidden group">
+                        {isExpired && <div className="absolute top-0 right-0 bg-gray-100 text-gray-400 text-[9px] px-3 py-1 font-black rounded-bl-xl uppercase tracking-widest">Poll Closed</div>}
+                        <p className="font-bold text-gray-900 mb-1">{p.question}</p>
+                        <p className="text-[10px] text-gray-400 mb-6 uppercase tracking-widest font-bold">Total Participation: {total}</p>
                         
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                           {(p.options ?? []).map((opt: any) => {
                             const count = voteCounts[opt.id] ?? 0;
                             const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                             return (
                               <div key={opt.id}>
-                                <div className="flex justify-between text-xs font-bold mb-1.5">
+                                <div className="flex justify-between text-[11px] font-black uppercase tracking-wider mb-2">
                                   <span className="text-gray-600">{opt.text}</span>
                                   <span className="text-primary">{pct}%</span>
                                 </div>
-                                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${pct}%` }} />
+                                <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                                  <div className="h-full bg-primary transition-all duration-1000 ease-out" style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                             );
@@ -313,59 +344,72 @@ export default function GroupAdminPage() {
 
             {tab === "files" && (
               <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-2xl border p-8 mb-8 shadow-sm text-center">
-                  <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">📁</span>
+                <div className="bg-white rounded-[2rem] border p-8 mb-8 shadow-sm text-center">
+                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-gray-100">
+                    <span className="text-2xl">🔒</span>
                   </div>
-                  <h3 className="font-bold text-primary mb-2">Secure Document Upload</h3>
-                  <p className="text-xs text-gray-500 mb-6">Files are password-protected and only accessible to group members.</p>
+                  <h3 className="font-bold text-gray-900 mb-2">Secure Document Vault</h3>
+                  <p className="text-[11px] font-medium text-gray-400 mb-8 max-w-xs mx-auto">All group files are encrypted. Passwords are required for members to view contents.</p>
                   
                   <div className="space-y-4 text-left">
                     <input 
                       value={fileForm.name} 
                       onChange={e => setFileForm(p => ({ ...p, name: e.target.value }))}
-                      placeholder="Document Title (e.g. March 2026 Minutes)" 
-                      className="w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary" 
+                      placeholder="Document Title (e.g. Town Hall Minutes)" 
+                      className="w-full border rounded-xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-primary/20 bg-gray-50/50 focus:bg-white transition-all font-medium" 
                     />
                     <input 
                       value={fileForm.password} 
                       onChange={e => setFileForm(p => ({ ...p, password: e.target.value }))}
                       type="password" 
-                      placeholder="Set access password"
-                      className="w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary" 
+                      placeholder="Set protection password"
+                      className="w-full border rounded-xl px-4 py-4 text-sm outline-none focus:ring-2 focus:ring-primary/20 bg-gray-50/50 focus:bg-white transition-all font-medium" 
                     />
-                    <div className="border-2 border-dashed rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer relative">
+                    <div className="border-2 border-dashed border-gray-100 rounded-2xl p-10 text-center hover:bg-gray-50 hover:border-primary/20 transition cursor-pointer relative group">
                       <input 
                         type="file" 
                         accept=".pdf,.doc,.docx,.jpg"
                         onChange={e => setFileToUpload(e.target.files?.[0] ?? null)}
                         className="absolute inset-0 opacity-0 cursor-pointer" 
                       />
-                      <p className="text-xs text-gray-400">{fileToUpload ? `✅ ${fileToUpload.name}` : "Click or drag to upload (PDF, DOC, JPEG)"}</p>
+                      <p className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-primary transition-colors">
+                        {fileToUpload ? `✅ ${fileToUpload.name}` : "Select PDF or Document"}
+                      </p>
                     </div>
                     <button 
                       onClick={uploadFile} 
                       disabled={loading || !fileToUpload}
-                      className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary-dark transition disabled:opacity-50"
+                      className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-primary-dark transition disabled:opacity-50 shadow-lg shadow-primary/20"
                     >
-                      {loading ? "Uploading Securely..." : "Upload Secure Document"}
+                      {loading ? "Encrypting & Uploading..." : "Store in Secure Vault"}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-3">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 mb-4">Stored Documents</p>
                   {files.map(f => (
-                    <div key={f.id} className="bg-white rounded-xl border p-4 flex justify-between items-center group">
-                      <div className="flex items-center gap-3">
-                        <div className="text-xl">📄</div>
+                    <div key={f.id} className="bg-white rounded-2xl border p-5 flex justify-between items-center group hover:border-primary/30 transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 text-lg">📄</div>
                         <div>
-                          <p className="font-bold text-sm text-gray-800">{f.name}</p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase">{new Date(f.created_at).toLocaleDateString()}</p>
+                          <p className="font-bold text-sm text-gray-900">{f.name}</p>
+                          <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{new Date(f.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <button onClick={() => deleteFile(f.id)} className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition">🗑️</button>
+                      <button 
+                        onClick={() => deleteFile(f.id)} 
+                        className="opacity-0 group-hover:opacity-100 p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   ))}
+                  {files.length === 0 && (
+                    <div className="text-center py-10 opacity-40">
+                      <p className="text-xs font-bold uppercase tracking-widest">No documents found</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
