@@ -5,38 +5,42 @@ import toast from "react-hot-toast";
 import { CONTACT_RECIPIENTS } from "@/lib/auth";
 
 export default function ContactPage() {
-  const [form, setForm] = useState({
+  const initialState = {
     name: "",
     phone: "",
     email: "",
     subject: "",
     recipient: "",
     body: "",
-  });
+  };
+
+  const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const { error } = await supabase
         .from("contact_messages")
-        .insert(form);
+        .insert([form]); // Supabase insert usually expects an array of objects
+
       if (error) throw error;
+
       toast.success("Message sent successfully!");
-      setForm({
-        name: "",
-        phone: "",
-        email: "",
-        subject: "",
-        recipient: "",
-        body: "",
-      });
+      setForm(initialState); // Resets the form to empty
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err.message || "Failed to send message");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to handle input changes without using 'any'
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -54,12 +58,11 @@ export default function ContactPage() {
               {f.label}
             </label>
             <input
+              name={f.name}
               type={f.type}
               required
-              value={(form as any)[f.name]}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, [f.name]: e.target.value }))
-              }
+              value={form[f.name as keyof typeof form]}
+              onChange={handleChange}
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
             />
           </div>
@@ -70,11 +73,10 @@ export default function ContactPage() {
             Recipient
           </label>
           <select
+            name="recipient"
             required
             value={form.recipient}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, recipient: e.target.value }))
-            }
+            onChange={handleChange}
             className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
           >
             <option value="">-- Select recipient --</option>
@@ -91,12 +93,11 @@ export default function ContactPage() {
             Message
           </label>
           <textarea
+            name="body"
             required
             rows={4}
             value={form.body}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, body: e.target.value }))
-            }
+            onChange={handleChange}
             className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none"
           />
         </div>
