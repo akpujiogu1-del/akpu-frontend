@@ -26,7 +26,10 @@ export default function PaymentButton({
 
   const handlePay = async () => {
     setLoading(true);
-    const reference = `AKPU-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const reference = `AKPU-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)
+      .toUpperCase()}`;
 
     const { error } = await supabase.from("payments").insert({
       user_id: userId,
@@ -44,19 +47,16 @@ export default function PaymentButton({
     }
 
     try {
-      // The "as any" on the string prevents TypeScript from checking node_modules
-      const PaystackModule = await import("@paystack/inline-js" as any);
-      const PaystackPop = PaystackModule.default;
+      // @ts-ignore
+      const PaystackPop = (await import("@paystack/inline-js")).default;
       const popup = new PaystackPop();
-
       popup.newTransaction({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email,
         amount: amount * 100,
         ref: reference,
         currency: "NGN",
         metadata: { userId, groupId, category },
-
         onSuccess: async (transaction: any) => {
           const res = await fetch("/api/verify-payment", {
             method: "POST",
@@ -64,19 +64,17 @@ export default function PaymentButton({
             body: JSON.stringify({ reference: transaction.reference }),
           });
           const data = await res.json();
-          if (data.success) toast.success("Payment successful! ✅");
-          else toast.error("Payment verification failed.");
+          if (data.success) toast.success("Payment successful!");
+          else toast.error("Payment verification failed. Contact admin.");
           setLoading(false);
         },
-
         onCancel: () => {
           toast.error("Payment cancelled.");
           setLoading(false);
         },
       });
-    } catch (err) {
-      console.error("Paystack load error:", err);
-      toast.error("Could not load payment gateway.");
+    } catch {
+      toast.error("Payment system unavailable. Try again.");
       setLoading(false);
     }
   };
@@ -85,9 +83,11 @@ export default function PaymentButton({
     <button
       onClick={handlePay}
       disabled={loading}
-      className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all disabled:opacity-60"
+      className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-primary-dark transition disabled:opacity-60"
     >
-      {loading ? "Processing..." : label ?? `Pay ₦${amount.toLocaleString()}`}
+      {loading
+        ? "Processing..."
+        : label ?? `Pay NGN ${amount.toLocaleString()} (${category})`}
     </button>
   );
 }
