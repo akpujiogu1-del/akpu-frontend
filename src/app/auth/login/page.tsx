@@ -70,7 +70,8 @@ export default function LoginPage() {
               <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">
                 Password
               </label>
-              <Link href="/auth/reset-password" size="text-[10px]" className="text-secondary font-bold hover:underline">
+              {/* FIX: Removed 'size' prop and moved text-[10px] into className */}
+              <Link href="/auth/reset-password" className="text-[10px] text-secondary font-bold hover:underline">
                 FORGOT?
               </Link>
             </div>
