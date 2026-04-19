@@ -1,26 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --primary: #2d6a2d;
+  --primary-light: #4a9e4a;
+  --primary-dark: #1a4a1a;
+  --primary-50: #eaf5ea;
+  --primary-100: #c8e6c9;
+  --secondary: #6b3a1f;
+  --secondary-light: #a0622a;
+  --secondary-dark: #4a2510;
+  --secondary-50: #f8f0e8;
+  --secondary-100: #f3e0cc;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Outfit", "Segoe UI", sans-serif;
+  background: white;
+  color: #1a1a1a;
+}
+
+.bg-primary { background-color: var(--primary) !important; }
+.bg-primary-light { background-color: var(--primary-light) !important; }
+.bg-primary-dark { background-color: var(--primary-dark) !important; }
+.bg-primary-50 { background-color: var(--primary-50) !important; }
+.bg-primary-100 { background-color: var(--primary-100) !important; }
+.bg-secondary { background-color: var(--secondary) !important; }
+.bg-secondary-light { background-color: var(--secondary-light) !important; }
+.bg-secondary-dark { background-color: var(--secondary-dark) !important; }
+.bg-secondary-50 { background-color: var(--secondary-50) !important; }
+.bg-secondary-100 { background-color: var(--secondary-100) !important; }
+.text-primary { color: var(--primary) !important; }
+.text-primary-light { color: var(--primary-light) !important; }
+.text-primary-dark { color: var(--primary-dark) !important; }
+.text-primary-100 { color: var(--primary-100) !important; }
+.text-secondary { color: var(--secondary) !important; }
+.text-secondary-light { color: var(--secondary-light) !important; }
+.text-secondary-dark { color: var(--secondary-dark) !important; }
+.border-primary { border-color: var(--primary) !important; }
+.border-primary-100 { border-color: var(--primary-100) !important; }
+.border-secondary { border-color: var(--secondary) !important; }
+.border-secondary-100 { border-color: var(--secondary-100) !important; }
+.hover\:bg-primary-dark:hover { background-color: var(--primary-dark) !important; }
+.hover\:bg-secondary-dark:hover { background-color: var(--secondary-dark) !important; }
+.hover\:bg-primary-50:hover { background-color: var(--primary-50) !important; }
+.ring-primary { --tw-ring-color: var(--primary) !important; }
+.focus\:ring-primary:focus { --tw-ring-color: var(--primary) !important; }
+.animate-marquee { animation: marquee 35s linear infinite; }
+@keyframes marquee {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
 }
