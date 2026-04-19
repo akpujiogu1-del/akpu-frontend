@@ -9,14 +9,13 @@ export async function PATCH(req: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          cookieStore.set({ name, value: "", ...options });
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
         },
       },
     }
@@ -26,33 +25,29 @@ export async function PATCH(req: Request) {
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: role } = await supabase
+  const { data: roleData } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", session.user.id)
-    .in("role", ["super_admin", "community_admin"])
-    .single();
+    .eq("user_id", session.user.id);
 
-  if (!role)
+  const roles = roleData?.map((r) => r.role) ?? [];
+  const isAdmin = roles.some((r) =>
+    ["super_admin", "community_admin"].includes(r)
+  );
+  if (!isAdmin)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
 
   if (body.action === "approve") {
-    await supabase
-      .from("users")
-      .update({ status: "approved" })
-      .eq("id", body.userId);
+    await supabase.from("users")
+      .update({ status: "approved" }).eq("id", body.userId);
   } else if (body.action === "suspend") {
-    await supabase
-      .from("users")
-      .update({ status: "suspended", comment_enabled: false })
-      .eq("id", body.userId);
+    await supabase.from("users")
+      .update({ status: "suspended", comment_enabled: false }).eq("id", body.userId);
   } else if (body.action === "reject") {
-    await supabase
-      .from("users")
-      .update({ status: "rejected" })
-      .eq("id", body.userId);
+    await supabase.from("users")
+      .update({ status: "rejected" }).eq("id", body.userId);
   } else if (body.action === "assign_role" && body.role) {
     await supabase.from("user_roles").upsert({
       user_id: body.userId,
