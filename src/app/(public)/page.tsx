@@ -11,7 +11,7 @@ import {
   MapPin, 
   Award, 
   Newspaper,
-  Music2 // TikTok Icon equivalent
+  Music
 } from "lucide-react";
 
 function toYTEmbed(url: string) {
@@ -22,7 +22,7 @@ function toYTEmbed(url: string) {
 }
 
 const SOCIAL = [
-  { key: "tiktok_url",    label: "TikTok",    icon: Music2 },
+  { key: "tiktok_url",    label: "TikTok",    icon: Music },
   { key: "facebook_url",  label: "Facebook",  icon: Facebook },
   { key: "instagram_url", label: "Instagram", icon: Instagram },
   { key: "youtube_url",   label: "YouTube",   icon: Youtube },
@@ -55,7 +55,7 @@ export default async function LandingPage() {
 
       {/* HERO SECTION */}
       <section className="bg-[#2d6a2d] text-white py-20 px-6 text-center border-b-8 border-[#6b3a1f]">
-        <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tighter">AKPU TOWN</h1>
+        <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tighter uppercase">Akpu Town</h1>
         <p className="text-xl md:text-2xl text-[#f3e0cc] mb-10 font-light italic">The Land of the Ancients</p>
         {!session && (
           <Link href="/auth/register" className="inline-block bg-[#6b3a1f] hover:bg-[#4a2510] text-white px-12 py-4 rounded-full text-xl font-bold shadow-2xl transition-transform hover:scale-105">
@@ -64,7 +64,7 @@ export default async function LandingPage() {
         )}
       </section>
 
-      {/* MULTIMEDIA SECTION: VIDEO & MAP */}
+      {/* MULTIMEDIA: VIDEO & MAP */}
       <section className="grid md:grid-cols-2 gap-8 p-6 md:p-12 bg-[#f8f0e8]">
         <div className="bg-white p-4 rounded-3xl shadow-xl border-2 border-[#2d6a2d]">
           <div className="flex items-center gap-2 mb-4 text-[#2d6a2d]">
@@ -83,7 +83,7 @@ export default async function LandingPage() {
         <div className="bg-white p-4 rounded-3xl shadow-xl border-2 border-[#2d6a2d]">
           <div className="flex items-center gap-2 mb-4 text-[#2d6a2d]">
             <MapPin size={24} />
-            <h2 className="font-bold uppercase tracking-wider">Find Us</h2>
+            <h2 className="font-bold uppercase tracking-wider">Our Location</h2>
           </div>
           {s.map_embed_url ? (
             <iframe src={s.map_embed_url} className="w-full h-[250px] md:h-full rounded-xl" loading="lazy" />
@@ -124,7 +124,7 @@ export default async function LandingPage() {
       {/* FOOTER & SOCIALS */}
       <footer className="bg-[#6b3a1f] text-white py-16 px-6 border-t-8 border-[#2d6a2d]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-8 uppercase tracking-widest">Connect With Akpu Town</h2>
+          <h2 className="text-2xl font-bold mb-8 uppercase tracking-widest text-[#f3e0cc]">Connect with Akpu</h2>
           <div className="flex justify-center gap-8 mb-12">
             {SOCIAL.map(({ key, icon: Icon }) => (
               <a 
@@ -139,8 +139,8 @@ export default async function LandingPage() {
             ))}
           </div>
           <div className="h-px bg-white/20 w-full mb-8"></div>
-          <p className="font-bold text-[#f3e0cc]">© {new Date().getFullYear()} AKPU COMMUNITY PORTAL</p>
-          <p className="text-xs mt-2 opacity-60">Land of the Ancients · Orumba South, Anambra</p>
+          <p className="font-bold text-[#f3e0cc] tracking-widest">AKPU TOWN · ANAMBRA STATE</p>
+          <p className="text-xs mt-2 opacity-60">© {new Date().getFullYear()} Community Portal</p>
         </div>
       </footer>
     </div>
