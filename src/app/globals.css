@@ -1,31 +1,32 @@
 @import "tailwindcss";
 
+:root {
+  --primary: #2d6a2d;
+  --primary-light: #4a9e4a;
+  --primary-dark: #1a4a1a;
+  --secondary: #6b3a1f;
+  --secondary-light: #a0622a;
+  --secondary-dark: #4a2510;
+  --white: #ffffff;
+}
+
 @theme {
-  /* This block tells Tailwind to generate bg-primary, text-primary, etc. */
-  --color-primary: #2d6a2d;
-  --color-primary-light: #4a9e4a;
-  --color-primary-dark: #1a4a1a;
-  --color-primary-50: #eaf5ea;
-  --color-primary-100: #c8e6c9;
-  
-  --color-secondary: #6b3a1f;
-  --color-secondary-light: #a0622a;
-  --color-secondary-dark: #4a2510;
-  --color-secondary-50: #f8f0e8;
-  --color-secondary-100: #f3e0cc;
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-secondary-dark: var(--secondary-dark);
 }
 
-@layer base {
-  body {
-    @apply bg-white text-gray-900;
-  }
-}
+/* Fallback classes in case the theme engine fails */
+.bg-primary { background-color: #2d6a2d !important; }
+.text-primary { color: #2d6a2d !important; }
+.bg-secondary { background-color: #6b3a1f !important; }
+.text-secondary { color: #6b3a1f !important; }
+.text-white { color: #ffffff !important; }
 
-.animate-marquee {
-  animation: marquee 35s linear infinite;
-}
-
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+body {
+  background-color: white;
+  color: #1a1a1a;
 }
