@@ -5,9 +5,7 @@ import Navbar from "@/components/Navbar";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 function toYTEmbed(url: string) {
-  const id = url.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
-  )?.[1];
+  const id = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
   return id ? `https://www.youtube.com/embed/${id}` : url;
 }
 
@@ -43,7 +41,6 @@ export default async function LandingPage() {
       <Navbar session={session} />
       <AnnouncementBanner />
 
-      {/* HERO SECTION - Deep Green with Brown CTA */}
       <section className="relative bg-[#2d6a2d] text-white py-24 px-6 text-center">
         <div className="relative z-10 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-black mb-4">AKPU TOWN</h1>
@@ -56,7 +53,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* HALL OF FAME - Greenish backgrounds */}
       <section className="py-20 px-6 bg-[#f8f0e8]">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl font-black text-[#2d6a2d] text-center uppercase mb-12">Hall of Fame</h2>
@@ -72,7 +68,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER - Brown background */}
       <footer className="bg-[#6b3a1f] py-12 px-6 text-center text-white">
         <div className="flex justify-center gap-6 mb-8">
           {SOCIAL.map(({ key, label, icon }) => (
