@@ -3,24 +3,43 @@ import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 
-export default async function UmunnaPage() {
-  // Await the cookie store for Next.js 15+ compatibility
-  const cookieStore = await cookies();
+const VILLAGES = [
+  { name: "Umueze/Umuezeilo",       icon: "🏡" },
+  { name: "Umuihu",                 icon: "🏡" },
+  { name: "Ohemmiri",               icon: "🏡" },
+  { name: "Mgboko",                 icon: "🏡" },
+  { name: "Okparaebutere/Umuikpa",  icon: "🏡" },
+  { name: "Upata",                  icon: "🏡" },
+  { name: "Umuokpara",              icon: "🏡" },
+  { name: "Umuanaga",               icon: "🏡" },
+  { name: "Umuezeagu",              icon: "🏡" },
+  { name: "Umuezeakpu",             icon: "🏡" },
+  { name: "Umuezechukwu",           icon: "🏡" },
+  { name: "Ihebuebu",               icon: "🏡" },
+  { name: "Uhuana",                 icon: "🏡" },
+  { name: "Umudiana",               icon: "🏡" },
+  { name: "Umunnukwuobu",           icon: "🏡" },
+];
 
+export default async function UmunnaPage() {
+  const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options));
+          } catch {}
         },
       },
     }
   );
 
   const { data: { session } } = await supabase.auth.getSession();
-  
   const { data: groups } = await supabase
     .from("groups")
     .select("*")
@@ -28,91 +47,72 @@ export default async function UmunnaPage() {
     .is("deleted_at", null)
     .order("name");
 
-  const VILLAGES = [
-    "Umuihu", "Okparaebetere/Umuikpa", "Umueze", "Umuezeilo",
-    "Umuezechukwu", "Chemmini", "Umuezeagu", "Umuezeakpu",
-    "Umuanaga", "Upata", "Ihebuebu", "Umuokpara",
-    "Mgboko", "Umudiana", "Uhuana", "Umunnukwuodu",
-  ];
-
   return (
     <>
       <Navbar session={session} />
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <header className="mb-12">
-          <h1 className="text-4xl font-extrabold text-primary mb-3">
-            Umunna
-          </h1>
-          <p className="text-gray-600 text-lg leading-relaxed">
-            The Umunna represents the extended family and kinship groups that form the foundation of Akpu community identity. Akpu is comprised of 16 historic villages.
-          </p>
-        </header>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 16px", fontFamily: "Outfit, sans-serif" }}>
+        <Link href="/" style={{ color: "#6b3a1f", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>
+          ← Back to Home
+        </Link>
 
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-secondary mb-6 flex items-center gap-2">
-            <span>🏘️</span> The 16 Villages of Akpu
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {VILLAGES.map((village, i) => (
-              <div
-                key={i}
-                className="bg-white border border-primary-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-primary-50 hover:border-primary-200 transition-all shadow-sm group"
-              >
-                <p className="text-2xl mb-2 group-hover:scale-110 transition-transform">🏡</p>
-                <p className="font-bold text-primary text-xs sm:text-sm uppercase tracking-tight">
-                  {village}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <h1 style={{ color: "#2d6a2d", fontSize: 32, fontWeight: 800, margin: "16px 0 4px" }}>
+          Umunna
+        </h1>
+        <p style={{ color: "#6b7280", marginBottom: 32, fontSize: 15 }}>
+          Akpu Town is made up of 15 villages forming the foundation of our community identity.
+        </p>
+
+        <h2 style={{ color: "#6b3a1f", fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+          The 15 Villages of Akpu
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 12, marginBottom: 40 }}>
+          {VILLAGES.map((v, i) => (
+            <div key={i} style={{
+              background: "white", border: "1px solid #c8e6c9",
+              borderRadius: 12, padding: "14px 12px", textAlign: "center",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}>
+              <p style={{ fontSize: 28, margin: "0 0 6px" }}>🏡</p>
+              <p style={{ fontWeight: 700, color: "#2d6a2d", fontSize: 13, margin: 0 }}>{v.name}</p>
+              <p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>Village {i + 1}</p>
+            </div>
+          ))}
+        </div>
 
         {groups && groups.length > 0 && (
-          <section className="mb-16">
-            <h2 className="text-2xl font-bold text-secondary mb-6 flex items-center gap-2">
-              <span>🤝</span> Umunna Groups
+          <>
+            <h2 style={{ color: "#6b3a1f", fontSize: 20, fontWeight: 700, marginBottom: 16 }}>
+              Umunna Groups
             </h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 32 }}>
               {groups.map((g) => (
-                <div
-                  key={g.id}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="w-12 h-12 bg-secondary-50 rounded-xl flex items-center justify-center mb-4">
-                    <span className="text-2xl">🛡️</span>
-                  </div>
-                  <h3 className="font-bold text-xl text-secondary mb-2">
-                    {g.name}
-                  </h3>
-                  {g.description && (
-                    <p className="text-gray-500 text-sm mb-4 line-clamp-3">
-                      {g.description}
-                    </p>
-                  )}
-                  <Link
-                    href={session ? `/dashboard/umunna?group=${g.id}` : "/auth/register"}
-                    className="inline-flex items-center text-sm text-primary font-bold hover:gap-2 transition-all"
-                  >
-                    {session ? "View Group Details" : "Join to participate"} <span className="ml-1">→</span>
+                <div key={g.id} style={{
+                  background: "white", border: "1px solid #e5e7eb",
+                  borderRadius: 12, padding: 16,
+                }}>
+                  <p style={{ fontSize: 28, margin: "0 0 8px" }}>🤝</p>
+                  <p style={{ fontWeight: 700, color: "#6b3a1f", margin: "0 0 4px" }}>{g.name}</p>
+                  {g.description && <p style={{ fontSize: 12, color: "#6b7280" }}>{g.description}</p>}
+                  <Link href={session ? `/dashboard/umunna?group=${g.id}` : "/auth/register"}
+                    style={{ color: "#2d6a2d", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                    {session ? "View Group →" : "Join to participate →"}
                   </Link>
                 </div>
               ))}
             </div>
-          </section>
+          </>
         )}
 
         {!session && (
-          <div className="bg-primary text-white rounded-2xl p-10 text-center shadow-xl">
-            <h3 className="text-2xl font-bold mb-3">
+          <div style={{ background: "#eaf5ea", border: "1px solid #c8e6c9", borderRadius: 16, padding: 32, textAlign: "center" }}>
+            <h3 style={{ color: "#2d6a2d", fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>
               Connect with your Umunna
             </h3>
-            <p className="text-primary-100 mb-6 max-w-2xl mx-auto">
-              Register as a community member to join your Umunna group, participate in discussions, and stay connected with your kinsmen.
+            <p style={{ color: "#6b7280", marginBottom: 20, fontSize: 14 }}>
+              Register as a community member to join your Umunna group and participate in discussions.
             </p>
-            <Link
-              href="/auth/register"
-              className="inline-block bg-secondary text-white px-10 py-4 rounded-full font-bold hover:bg-secondary-dark transition-transform hover:scale-105 shadow-lg"
-            >
+            <Link href="/auth/register"
+              style={{ background: "#2d6a2d", color: "white", padding: "12px 28px", borderRadius: 25, textDecoration: "none", fontWeight: 700, fontSize: 15 }}>
               Register Now
             </Link>
           </div>
