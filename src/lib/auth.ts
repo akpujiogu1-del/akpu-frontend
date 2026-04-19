@@ -1,22 +1,21 @@
 import { supabase } from "./supabase";
 
 export const VILLAGES = [
+  "Umueze/Umuezeilo",
   "Umuihu",
-  "Okparaebetere/Umuikpa",
-  "Umueze",
-  "Umuezeilo",
-  "Umuezechukwu",
-  "Chemmini",
+  "Ohemmiri",
+  "Mgboko",
+  "Okparaebutere/Umuikpa",
+  "Upata",
+  "Umuokpara",
+  "Umuanaga",
   "Umuezeagu",
   "Umuezeakpu",
-  "Umuanaga",
-  "Upata",
+  "Umuezechukwu",
   "Ihebuebu",
-  "Umuokpara",
-  "Mgboko",
-  "Umudiana",
   "Uhuana",
-  "Umunnukwuodu",
+  "Umudiana",
+  "Umunnukwuobu",
 ];
 
 export const CONTACT_RECIPIENTS = [
@@ -29,19 +28,27 @@ export const CONTACT_RECIPIENTS = [
 ];
 
 export async function registerUser(email: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
+  });
   if (error) throw error;
 
-  await supabase.from("users").insert({
-    id: data.user!.id,
-    email,
-    status: "pending",
-  });
+  if (data.user) {
+    await supabase.from("users").insert({
+      id: data.user.id,
+      email,
+      status: "pending",
+    });
 
-  await supabase.from("user_roles").insert({
-    user_id: data.user!.id,
-    role: "member",
-  });
+    await supabase.from("user_roles").insert({
+      user_id: data.user.id,
+      role: "member",
+    });
+  }
 
   return data.user;
 }

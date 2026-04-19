@@ -3,161 +3,136 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { submitKYC, VILLAGES } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import toast from "react-hot-toast";
 
 export default function KYCPage() {
   const [userId, setUserId] = useState("");
-  const [form, setForm] = useState({ 
-    full_name: "", 
-    date_of_birth: "", 
-    phone: "", 
-    sex: "", 
-    village: "" 
+  const [form, setForm] = useState({
+    full_name: "", date_of_birth: "", phone: "", sex: "", village: "",
   });
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/auth/login");
-      } else {
-        setUserId(user.id);
-      }
-    };
-    checkUser();
-  }, [router]);
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) router.push("/auth/login");
+      else setUserId(data.user.id);
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic Validation
-    if (Object.values(form).some(val => !val)) {
-      return toast.error("Please fill in all identity fields");
+    if (!form.full_name || !form.date_of_birth || !form.phone || !form.sex || !form.village) {
+      return toast.error("All fields are required");
     }
-
-    // Age validation check (must be at least 13 or similar community rule)
-    const birthDate = new Date(form.date_of_birth);
-    if (birthDate > new Date()) {
-      return toast.error("Date of birth cannot be in the future");
-    }
-
+    if (!agreed) return toast.error("You must agree to the Terms of Use and Privacy Policy");
     setLoading(true);
     try {
-      // submitKYC usually updates the 'users' table with status='pending'
       await submitKYC(userId, form as any);
-      toast.success("Details submitted for review!");
-      
-      // Redirect to a 'Thank You / Pending' page
+      toast.success("KYC submitted! Awaiting approval.");
       router.push("/auth/pending");
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong. Please try again.");
+      toast.error(err.message || "Submission failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-3xl shadow-xl shadow-primary/5 p-8 w-full max-w-lg border border-gray-100">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-4">
-            <span className="text-3xl">👤</span>
-          </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Identity Verification</h1>
-          <p className="text-gray-500 text-sm mt-2">
-            This information helps us verify your membership in <span className="text-primary font-bold">Akpu Community</span>.
+    <div className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{ background: "#eaf5ea" }}>
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg">
+        <div className="text-center mb-8">
+          <p className="text-4xl mb-2">📋</p>
+          <h1 className="text-2xl font-extrabold" style={{ color: "#2d6a2d" }}>
+            Identity Verification
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Complete your KYC to join the community
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Full Name */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
-            <input 
-              required 
-              value={form.full_name} 
-              onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
-              placeholder="Enter your legal name"
-              className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <input required value={form.full_name}
+              onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
+              placeholder="Your full name as known in the community"
+              className="w-full border rounded-lg px-4 py-2.5 outline-none text-sm"
+              style={{ borderColor: "#c8e6c9" }} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* DOB */}
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Date of Birth</label>
-              <input 
-                type="date" 
-                required 
-                value={form.date_of_birth} 
-                onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))}
-                className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
-              />
-            </div>
-            {/* Sex */}
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Sex</label>
-              <select 
-                required 
-                value={form.sex} 
-                onChange={e => setForm(p => ({ ...p, sex: e.target.value }))}
-                className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all"
-              >
-                <option value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+            <input type="date" required value={form.date_of_birth}
+              onChange={(e) => setForm((p) => ({ ...p, date_of_birth: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2.5 outline-none text-sm"
+              style={{ borderColor: "#c8e6c9" }} />
           </div>
 
-          {/* Phone */}
           <div>
-            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
-            <input 
-              type="tel" 
-              required 
-              value={form.phone} 
-              onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-              placeholder="080 0000 0000"
-              className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input type="tel" required value={form.phone}
+              onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+              placeholder="e.g. 08012345678"
+              className="w-full border rounded-lg px-4 py-2.5 outline-none text-sm"
+              style={{ borderColor: "#c8e6c9" }} />
           </div>
 
-          {/* Village */}
           <div>
-            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Your Village</label>
-            <select 
-              required 
-              value={form.village} 
-              onChange={e => setForm(p => ({ ...p, village: e.target.value }))}
-              className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all"
-            >
-              <option value="">-- Choose your village --</option>
-              {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
+            <select required value={form.sex}
+              onChange={(e) => setForm((p) => ({ ...p, sex: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2.5 outline-none text-sm"
+              style={{ borderColor: "#c8e6c9" }}>
+              <option value="">-- Select --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
             </select>
           </div>
 
-          {/* Warning Note */}
-          <div className="p-4 bg-orange-50 rounded-2xl flex gap-3 items-start">
-            <span className="text-lg">⚠️</span>
-            <p className="text-[11px] text-orange-800 leading-relaxed font-medium">
-              Ensure these details are correct. You won't be able to change them once you submit for verification.
-            </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Village</label>
+            <select required value={form.village}
+              onChange={(e) => setForm((p) => ({ ...p, village: e.target.value }))}
+              className="w-full border rounded-lg px-4 py-2.5 outline-none text-sm"
+              style={{ borderColor: "#c8e6c9" }}>
+              <option value="">-- Select your village --</option>
+              {VILLAGES.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-[0.98] disabled:opacity-60"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                Processing...
+          {/* Terms agreement */}
+          <div style={{ background: "#eaf5ea", border: "1px solid #c8e6c9" }}
+            className="rounded-xl p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-green-700" />
+              <span className="text-sm text-gray-600">
+                By completing and submitting this form, you agree to the{" "}
+                <Link href="/terms" target="_blank"
+                  className="font-semibold hover:underline" style={{ color: "#2d6a2d" }}>
+                  Terms of Use
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" target="_blank"
+                  className="font-semibold hover:underline" style={{ color: "#2d6a2d" }}>
+                  Privacy Policy
+                </Link>{" "}
+                guiding this Platform.
               </span>
-            ) : "Submit Verification"}
+            </label>
+          </div>
+
+          <button type="submit" disabled={loading || !agreed}
+            className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-60"
+            style={{ background: agreed ? "#2d6a2d" : "#aaa" }}>
+            {loading ? "Submitting..." : "Submit KYC"}
           </button>
         </form>
       </div>
