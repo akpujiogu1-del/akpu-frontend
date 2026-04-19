@@ -5,27 +5,17 @@ import Navbar from "@/components/Navbar";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 function toYTEmbed(url: string) {
-  const id = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+  const id = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
+  )?.[1];
   return id ? `https://www.youtube.com/embed/${id}` : url;
 }
 
 const SOCIAL = [
-  { 
-    key: "facebook_url", 
-    path: "M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" 
-  },
-  { 
-    key: "instagram_url", 
-    path: "M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z M17.5 6.5h.01" 
-  },
-  { 
-    key: "youtube_url", 
-    path: "M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.42a2.78 2.78 0 0 0-1.94 2C1 8.14 1 12 1 12s0 3.86.42 5.58a2.78 2.78 0 0 0 1.94 2c1.72.42 8.6.42 8.6.42s6.88 0 8.6-.42a2.78 2.78 0 0 0 1.94-2C23 15.86 23 12 23 12s0-3.86-.42-5.58z" 
-  },
-  { 
-    key: "tiktok_url", 
-    path: "M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" 
-  }
+  { key: "tiktok_url",    label: "TikTok",    icon: "🎵" },
+  { key: "facebook_url",  label: "Facebook",  icon: "👥" },
+  { key: "instagram_url", label: "Instagram", icon: "📸" },
+  { key: "youtube_url",   label: "YouTube",   icon: "▶️" },
 ];
 
 export default async function LandingPage() {
@@ -35,82 +25,240 @@ export default async function LandingPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) { return cookieStore.get(name)?.value; },
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
+        },
       },
     }
   );
 
   const { data: { session } } = await supabase.auth.getSession();
-  const { data: rows } = await supabase.from("site_settings").select("key,value");
-  const s: Record<string, string> = Object.fromEntries((rows ?? []).map((r) => [r.key, r.value]));
-  const { data: leaders } = await supabase.from("leaders").select("*").is("deleted_at", null).order("sort_order");
+
+  const { data: rows } = await supabase
+    .from("site_settings").select("key,value");
+  const s: Record<string, string> = Object.fromEntries(
+    (rows ?? []).map((r) => [r.key, r.value])
+  );
+
+  const { data: leaders } = await supabase
+    .from("leaders").select("*")
+    .is("deleted_at", null).order("sort_order");
+
   const hallOfFame = leaders?.filter((l) => l.leader_type === "hall_of_fame") ?? [];
+  const community  = leaders?.filter((l) => l.leader_type === "community")    ?? [];
+  const political  = leaders?.filter((l) => l.leader_type === "political")    ?? [];
+
+  const { data: news } = await supabase
+    .from("news").select("*")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(4);
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "Outfit, sans-serif" }}>
+    <div style={{ fontFamily: "Outfit, Segoe UI, sans-serif" }}>
       <Navbar session={session} />
       <AnnouncementBanner />
 
-      <section className="bg-[#2d6a2d] text-white py-20 px-6 text-center border-b-8 border-[#6b3a1f]">
-        <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tighter uppercase">Akpu Town</h1>
-        <p className="text-xl md:text-2xl text-[#f3e0cc] mb-10 font-light italic text-balance">The Land of the Ancients</p>
-        {!session && (
-          <Link href="/auth/register" className="inline-block bg-[#6b3a1f] hover:bg-[#4a2510] text-white px-12 py-4 rounded-full text-xl font-bold shadow-2xl transition-transform hover:scale-105">
-            Join Community
-          </Link>
-        )}
-      </section>
-
-      <section className="grid md:grid-cols-2 gap-8 p-6 md:p-12 bg-[#f8f0e8]">
-        <div className="bg-white p-4 rounded-3xl shadow-xl border-2 border-[#2d6a2d]">
-          <h2 className="font-bold uppercase tracking-wider mb-4 text-[#2d6a2d]">Community Spotlight</h2>
+      {/* HERO */}
+      <section style={{ background: "#eaf5ea" }} className="grid md:grid-cols-2 gap-6 p-6 md:p-10">
+        <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
           {s.landing_video_url ? (
-            <iframe src={toYTEmbed(s.landing_video_url)} className="w-full aspect-video rounded-xl" allowFullScreen />
+            <iframe
+              src={toYTEmbed(s.landing_video_url)}
+              className="w-full h-full"
+              allowFullScreen
+              title="Akpu Community Video"
+            />
           ) : (
-            <div className="w-full aspect-video bg-[#eaf5ea] rounded-xl flex items-center justify-center text-[#2d6a2d] italic">Video coming soon...</div>
+            <div style={{ background: "#c8e6c9", color: "#2d6a2d" }}
+              className="w-full h-full rounded-xl flex flex-col items-center justify-center gap-2">
+              <span className="text-5xl">🎬</span>
+              <p className="font-semibold">Community Video</p>
+              <p className="text-sm opacity-70">Set by admin in settings</p>
+            </div>
           )}
         </div>
-        <div className="bg-white p-4 rounded-3xl shadow-xl border-2 border-[#2d6a2d]">
-          <h2 className="font-bold uppercase tracking-wider mb-4 text-[#2d6a2d]">Our Location</h2>
+        <div>
+          <p style={{ color: "#6b3a1f" }} className="font-bold text-lg mb-1">Our Location</p>
+          <p className="text-sm text-gray-600 mb-1">Akpu Town, Orumba South LGA</p>
+          <p className="text-sm text-gray-600 mb-3">Anambra State, Nigeria</p>
           {s.map_embed_url ? (
-            <iframe src={s.map_embed_url} className="w-full h-[250px] md:h-full rounded-xl" loading="lazy" />
+            <iframe
+              src={s.map_embed_url}
+              className="w-full h-64 rounded-xl"
+              style={{ border: "2px solid #2d6a2d" }}
+              loading="lazy"
+              title="Akpu Map"
+            />
           ) : (
-            <div className="w-full h-[250px] bg-[#eaf5ea] rounded-xl flex items-center justify-center text-[#2d6a2d] italic">Map loading...</div>
+            <div style={{ background: "#eaf5ea", border: "2px dashed #2d6a2d", color: "#2d6a2d" }}
+              className="w-full h-64 rounded-xl flex flex-col items-center justify-center gap-2">
+              <span className="text-4xl">🗺️</span>
+              <p className="font-semibold">Map</p>
+              <p className="text-xs opacity-70">Set Google Maps embed URL in admin settings</p>
+            </div>
           )}
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-white max-w-6xl mx-auto">
-        <h2 className="text-4xl font-black text-[#2d6a2d] uppercase text-center mb-12">Hall of Fame</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {(hallOfFame.length > 0 ? hallOfFame : Array(4).fill(null)).map((l, i) => (
-            <div key={i} className="text-center group">
-              <div className="w-32 h-32 md:w-40 md:h-40 mx-auto mb-4 relative">
-                <img 
-                  src={l?.photo_url || `https://ui-avatars.com/api/?name=${l?.name || 'Akpu'}&background=2d6a2d&color=fff`} 
-                  className="w-full h-full rounded-full object-cover border-4 border-[#6b3a1f] shadow-lg relative z-10" 
-                  alt="Leader" 
-                />
-              </div>
-              <h3 className="font-bold text-[#2d6a2d] text-lg">{l?.name || "Distinguished Citizen"}</h3>
-              <p className="text-[#6b3a1f] text-sm font-semibold">{l?.title || "Community Leader"}</p>
+      {/* WELCOME */}
+      <section className="text-center py-16" style={{ background: "white" }}>
+        <h1 style={{ color: "#2d6a2d" }} className="text-4xl md:text-5xl font-extrabold mb-2">
+          Welcome to Akpu
+        </h1>
+        <p style={{ color: "#6b3a1f" }} className="text-xl font-light mb-8">
+          The Land of the Ancients
+        </p>
+        <Link href="/auth/register"
+          style={{ background: "#6b3a1f", color: "white" }}
+          className="inline-block px-10 py-4 rounded-full text-lg font-semibold shadow-lg hover:opacity-90 transition">
+          Join Community
+        </Link>
+      </section>
+
+      {/* HALL OF FAME */}
+      <section style={{ background: "#eaf5ea" }} className="py-12">
+        <h2 style={{ color: "#2d6a2d" }} className="text-2xl font-bold text-center mb-8">
+          Hall of Fame
+        </h2>
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {hallOfFame.length > 0 ? hallOfFame.map((l) => (
+            <div key={l.id} className="bg-white rounded-xl shadow p-4 text-center">
+              <img src={l.photo_url ?? "/avatar-placeholder.png"} alt={l.name}
+                className="w-24 h-24 rounded-full mx-auto mb-3 object-cover"
+                style={{ border: "4px solid #2d6a2d" }} />
+              <p className="font-semibold text-gray-800">{l.name}</p>
+              <p style={{ color: "#6b3a1f" }} className="text-xs">{l.title}</p>
+            </div>
+          )) : ["Community Champion", "Distinguished Elder", "Youth Icon", "Cultural Ambassador"].map((name, i) => (
+            <div key={i} className="bg-white rounded-xl shadow p-4 text-center">
+              <div className="w-24 h-24 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl"
+                style={{ background: "#eaf5ea", border: "4px solid #2d6a2d" }}>👤</div>
+              <p className="font-semibold text-gray-400 text-sm">{name}</p>
+              <p style={{ color: "#6b3a1f" }} className="text-xs">Add via Admin</p>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="bg-[#6b3a1f] text-white py-16 px-6 border-t-8 border-[#2d6a2d]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-8 uppercase tracking-widest text-[#f3e0cc]">Connect with Akpu</h2>
-          <div className="flex justify-center gap-6 mb-12">
-            {SOCIAL.map(({ key, path }) => (
-              <a key={key} href={s[key] || "#"} className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all" target="_blank">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={path}/></svg>
+      {/* OUR LEADERS */}
+      <section className="py-12" style={{ background: "white" }}>
+        <h2 style={{ color: "#2d6a2d" }} className="text-2xl font-bold text-center mb-8">
+          Our Leaders
+        </h2>
+        <div className="max-w-6xl mx-auto px-6 flex gap-4 overflow-x-auto pb-2">
+          {community.length > 0 ? community.map((l) => (
+            <div key={l.id} className="min-w-[160px] rounded-xl p-4 text-center shrink-0"
+              style={{ background: "#eaf5ea" }}>
+              <img src={l.photo_url ?? "/avatar-placeholder.png"} alt={l.name}
+                className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+                style={{ border: "4px solid #2d6a2d" }} />
+              <p className="font-semibold text-sm">{l.name}</p>
+              <p style={{ color: "#6b3a1f" }} className="text-xs">{l.title}</p>
+            </div>
+          )) : ["President General", "Vice President", "Secretary", "Treasurer", "Financial Sec."].map((title, i) => (
+            <div key={i} className="min-w-[160px] rounded-xl p-4 text-center shrink-0"
+              style={{ background: "#eaf5ea" }}>
+              <div className="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center text-3xl"
+                style={{ background: "white", border: "4px solid #2d6a2d" }}>👤</div>
+              <p className="font-semibold text-sm text-gray-400">Leader Name</p>
+              <p style={{ color: "#6b3a1f" }} className="text-xs">{title}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* POLITICAL LEADERS */}
+      <section className="py-12" style={{ background: "#f8f0e8" }}>
+        <h2 style={{ color: "#6b3a1f" }} className="text-2xl font-bold text-center mb-8">
+          Our Political Leaders
+        </h2>
+        <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-3 gap-6">
+          {political.length > 0 ? political.map((l) => (
+            <div key={l.id} className="bg-white rounded-xl shadow p-4 text-center">
+              <img src={l.photo_url ?? "/avatar-placeholder.png"} alt={l.name}
+                className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+                style={{ border: "4px solid #6b3a1f" }} />
+              <p className="font-semibold">{l.name}</p>
+              <p style={{ color: "#6b3a1f" }} className="text-xs">{l.title}</p>
+            </div>
+          )) : ["Senator", "House of Reps Member", "Councilor"].map((title, i) => (
+            <div key={i} className="bg-white rounded-xl shadow p-4 text-center">
+              <div className="w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center text-3xl"
+                style={{ background: "#f8f0e8", border: "4px solid #6b3a1f" }}>👤</div>
+              <p className="font-semibold text-gray-400 text-sm">Leader Name</p>
+              <p style={{ color: "#6b3a1f" }} className="text-xs">{title}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* LATEST NEWS */}
+      <section className="py-12" style={{ background: "white" }}>
+        <h2 style={{ color: "#2d6a2d" }} className="text-2xl font-bold text-center mb-8">
+          Latest News
+        </h2>
+        <div className="max-w-6xl mx-auto px-6 grid sm:grid-cols-2 md:grid-cols-4 gap-6">
+          {(news && news.length > 0) ? news.map((n) => (
+            <div key={n.id} className="rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition">
+              {n.image_url && (
+                <img src={n.image_url} alt={n.title} className="w-full h-36 object-cover" />
+              )}
+              <div className="p-4">
+                <p style={{ color: "#2d6a2d" }} className="font-semibold text-sm">{n.title}</p>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{n.body}</p>
+              </div>
+            </div>
+          )) : ["Community Meeting", "Development Update", "Cultural Festival", "Youth Program"].map((title, i) => (
+            <div key={i} className="rounded-xl border overflow-hidden shadow-sm">
+              <div className="w-full h-36 flex items-center justify-center text-4xl"
+                style={{ background: "#eaf5ea" }}>📰</div>
+              <div className="p-4">
+                <p style={{ color: "#2d6a2d" }} className="font-semibold text-sm">{title}</p>
+                <p className="text-xs text-gray-400 mt-1">News will appear here once posted by admin</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-10 text-white text-center" style={{ background: "#2d6a2d" }}>
+        <p className="font-semibold mb-4 text-lg">Social Handles</p>
+        <div className="flex justify-center gap-4 flex-wrap mb-6">
+          {SOCIAL.map(({ key, label, icon }) => {
+            const url = s[key];
+            return (
+              <a key={key}
+                href={url || "#"}
+                target={url ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition"
+                style={{
+                  background: "rgba(255,255,255,0.2)",
+                  opacity: url ? 1 : 0.5,
+                  pointerEvents: url ? "auto" : "none",
+                }}>
+                <span>{icon}</span>
+                <span>{label}</span>
               </a>
-            ))}
-          </div>
-          <p className="font-bold text-[#f3e0cc] tracking-widest">AKPU TOWN · ANAMBRA STATE</p>
-          <p className="text-xs mt-2 opacity-60">© {new Date().getFullYear()} Community Portal</p>
+            );
+          })}
+        </div>
+        <p className="text-xs opacity-80 mb-1">
+          {`© ${new Date().getFullYear()} Akpu Community Portal · Land of the Ancients`}
+        </p>
+        <p className="text-xs opacity-60 mb-3">
+          Platform brought to you by One Nation Agency Services
+        </p>
+        <div className="flex justify-center gap-6 text-xs opacity-70">
+          <Link href="/terms" className="hover:underline text-white">Terms of Use</Link>
+          <Link href="/privacy" className="hover:underline text-white">Privacy Policy</Link>
         </div>
       </footer>
     </div>
