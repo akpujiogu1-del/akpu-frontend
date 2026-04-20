@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 function toYTEmbed(url: string) {
   const id = url.match(
@@ -62,7 +61,7 @@ export default async function LandingPage() {
   return (
     <div style={{ fontFamily: "Outfit, Segoe UI, sans-serif" }}>
       <Navbar session={session} />
-      <AnnouncementBanner />
+      
 
       {/* HERO */}
       <section style={{ background: "#eaf5ea" }} className="grid md:grid-cols-2 gap-6 p-6 md:p-10">
