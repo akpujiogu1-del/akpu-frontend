@@ -27,77 +27,73 @@ export async function middleware(req: NextRequest) {
   const isProtected =
     path.startsWith("/dashboard") || path.startsWith("/admin");
 
-  // Not logged in — redirect to login
   if (isProtected && !session) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
   if (isProtected && session) {
+
+    // Check if user is admin FIRST before anything else
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "super_admin")
+      .maybeSingle();
+
+    const { data: communityAdminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "community_admin")
+      .maybeSingle();
+
+    const { data: groupAdminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "group_admin")
+      .maybeSingle();
+
+    const isAdmin = !!(adminRole || communityAdminRole || groupAdminRole);
+
+    // ADMINS — skip all other checks, always allow through
+    if (isAdmin) {
+      return res;
+    }
+
+    // NON-ADMIN USERS — run full checks
     const { data: userRecord } = await supabase
       .from("users")
-      .select("status, force_password_change, village, full_name")
+      .select("status, force_password_change, village")
       .eq("id", session.user.id)
       .single();
 
-    // No user record at all — go to KYC
     if (!userRecord) {
       return NextResponse.redirect(new URL("/auth/kyc", req.url));
     }
 
-    // Force password change
-    if (
-      userRecord.force_password_change &&
-      path !== "/auth/change-password"
-    ) {
+    if (userRecord.force_password_change) {
       return NextResponse.redirect(new URL("/auth/change-password", req.url));
     }
 
-    // Check roles
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id);
-    const roles = roleData?.map((r) => r.role) ?? [];
-    const isAdmin = roles.some((r) =>
-      ["super_admin", "community_admin", "group_admin"].includes(r)
-    );
-
-    // ADMIN USERS — bypass all status checks, go straight through
-    if (isAdmin) {
-      // Only check admin path permission
-      if (path.startsWith("/admin")) {
-        return res; // admins can always access /admin
-      }
-      return res; // admins can always access /dashboard
+    if (!userRecord.village) {
+      return NextResponse.redirect(new URL("/auth/kyc", req.url));
     }
 
-    // REGULAR USERS — check KYC and status
-
-    // Has not submitted KYC yet (no village means KYC not done)
-    if (!userRecord.village && path.startsWith("/dashboard")) {
-      // Only redirect to KYC if not already going there
-      if (path !== "/auth/kyc") {
-        return NextResponse.redirect(new URL("/auth/kyc", req.url));
-      }
-    }
-
-    // Pending approval
-    if (userRecord.status === "pending" && path.startsWith("/dashboard")) {
+    if (userRecord.status === "pending") {
       return NextResponse.redirect(new URL("/auth/pending", req.url));
     }
 
-    // Suspended
-    if (userRecord.status === "suspended" && path.startsWith("/dashboard")) {
+    if (userRecord.status === "suspended") {
       return NextResponse.redirect(new URL("/auth/suspended", req.url));
     }
 
-    // Rejected
-    if (userRecord.status === "rejected" && path.startsWith("/dashboard")) {
+    if (userRecord.status === "rejected") {
       return NextResponse.redirect(new URL("/auth/rejected", req.url));
     }
 
-    // Non-admin trying to access /admin
-    if (path.startsWith("/admin") && !isAdmin) {
+    if (path.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
