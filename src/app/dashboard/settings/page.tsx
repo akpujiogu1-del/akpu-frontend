@@ -6,208 +6,226 @@ import toast from "react-hot-toast";
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null);
-  const [form, setForm] = useState({ 
-    full_name: "", 
-    phone: "", 
-    date_of_birth: "", 
-    sex: "", 
-    village: "" 
+  const [roles, setRoles]     = useState<string[]>([]);
+  const [form, setForm] = useState({
+    full_name: "", phone: "", date_of_birth: "", sex: "", village: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const [uploading, setUploading] = useState(false);
   const avatarRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from("users").select("*").eq("id", data.user.id).single()
-          .then(({ data: p }) => {
-            setProfile(p);
-            setForm({ 
-              full_name: p?.full_name ?? "", 
-              phone: p?.phone ?? "", 
-              date_of_birth: p?.date_of_birth ?? "", 
-              sex: p?.sex ?? "", 
-              village: p?.village ?? "" 
-            });
-          });
-      }
-    });
+    loadProfile();
   }, []);
+
+  async function loadProfile() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: p } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    const { data: r } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+
+    if (p) {
+      setProfile(p);
+      setForm({
+        full_name:     p.full_name     ?? "",
+        phone:         p.phone         ?? "",
+        date_of_birth: p.date_of_birth ?? "",
+        sex:           p.sex           ?? "",
+        village:       p.village       ?? "",
+      });
+    }
+    setRoles(r?.map((x) => x.role) ?? []);
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const updateData = { ...form, updated_at: new Date().toISOString() };
-      
-      const { error } = await supabase.from("users").update(updateData).eq("id", user!.id);
+      const { error } = await supabase
+        .from("users")
+        .update({ ...form, updated_at: new Date().toISOString() })
+        .eq("id", user!.id);
       if (error) throw error;
-      
-      // Update local profile state to reflect changes in UI
-      setProfile((p: any) => ({ ...p, ...form }));
-      toast.success("Profile updated successfully!");
-    } catch (err: any) { 
-      toast.error(err.message || "Failed to save changes"); 
-    } finally {
-      setLoading(false);
+      toast.success("Profile updated!");
+      loadProfile();
+    } catch (err: any) {
+      toast.error(err.message);
     }
+    setLoading(false);
   }
 
   async function handleAvatarUpload(file: File) {
-    if (file.size > 2 * 1024 * 1024) return toast.error("File must be under 2MB");
-    
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const fileExt = file.name.split(".").pop();
-      const path = `${user!.id}/avatar-${Date.now()}.${fileExt}`;
-      
-      const { data, error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
+      const path = `${user!.id}/avatar-${Date.now()}.${file.name.split(".").pop()}`;
+      const { data } = await supabase.storage
+        .from("avatars").upload(path, file, { upsert: true });
       if (data) {
-        const url = supabase.storage.from("avatars").getPublicUrl(data.path).data.publicUrl;
-        await supabase.from("users").update({ avatar_url: url }).eq("id", user!.id);
+        const url = supabase.storage
+          .from("avatars").getPublicUrl(data.path).data.publicUrl;
+        await supabase.from("users")
+          .update({ avatar_url: url }).eq("id", user!.id);
         setProfile((p: any) => ({ ...p, avatar_url: url }));
-        toast.success("Profile photo updated!");
+        toast.success("Photo updated!");
       }
-    } catch (err: any) { 
-      toast.error("Upload failed. Try again."); 
-    } finally {
-      setUploading(false);
-    }
+    } catch { toast.error("Upload failed"); }
+    setUploading(false);
   }
 
+  const primaryRole = roles.includes("super_admin")
+    ? "Super Admin"
+    : roles.includes("community_admin")
+    ? "Community Admin"
+    : roles.includes("group_admin")
+    ? "Group Admin"
+    : "Community Member";
+
+  const roleColor = roles.includes("super_admin")
+    ? { bg: "#eaf5ea", color: "#2d6a2d", border: "#c8e6c9" }
+    : roles.includes("community_admin")
+    ? { bg: "#fff3e0", color: "#e65100", border: "#ffe0b2" }
+    : { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", border: "1.5px solid #c8e6c9", borderRadius: 10,
+    padding: "12px 16px", fontSize: 14, outline: "none",
+    fontFamily: "inherit", boxSizing: "border-box",
+  };
+
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      {/* Page Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Account Settings</h1>
-        <p className="text-gray-500 text-sm mt-1">Manage your identity and preferences in the Akpu Portal.</p>
+    <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "Outfit, sans-serif" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, color: "#111827", marginBottom: 4 }}>
+        Account Settings
+      </h1>
+      <p style={{ color: "#6b7280", marginBottom: 24, fontSize: 14 }}>
+        Manage your identity and preferences in the Akpu Portal.
+      </p>
+
+      {/* Profile card */}
+      <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24, marginBottom: 16, textAlign: "center" }}>
+        <div style={{ position: "relative", display: "inline-block", marginBottom: 16 }}>
+          <img
+            src={profile?.avatar_url ?? "/avatar-placeholder.png"}
+            style={{ width: 96, height: 96, borderRadius: 20, objectFit: "cover", border: "3px solid #2d6a2d" }}
+          />
+          <button
+            onClick={() => avatarRef.current?.click()}
+            style={{ position: "absolute", bottom: -4, right: -4, background: "#2d6a2d", border: "2px solid white", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            📷
+          </button>
+          <input ref={avatarRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e) => { if (e.target.files?.[0]) handleAvatarUpload(e.target.files[0]); }} />
+        </div>
+
+        <p style={{ fontWeight: 800, fontSize: 18, margin: "0 0 4px", color: "#111827" }}>
+          {profile?.full_name || profile?.email || "Loading..."}
+        </p>
+        <p style={{ fontSize: 13, color: "#9ca3af", margin: "0 0 12px" }}>
+          {profile?.email}
+        </p>
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+          <span style={{
+            fontSize: 13, fontWeight: 700, padding: "4px 14px", borderRadius: 20,
+            background: roleColor.bg, color: roleColor.color, border: `1px solid ${roleColor.border}`,
+          }}>
+            {primaryRole}
+          </span>
+          <span style={{
+            fontSize: 13, fontWeight: 700, padding: "4px 14px", borderRadius: 20,
+            background: profile?.status === "approved" ? "#dcfce7" : "#fef9c3",
+            color: profile?.status === "approved" ? "#166534" : "#854d0e",
+            border: profile?.status === "approved" ? "1px solid #bbf7d0" : "1px solid #fde68a",
+          }}>
+            ● {(profile?.status ?? "loading").toUpperCase()}
+          </span>
+        </div>
+
+        {uploading && (
+          <p style={{ fontSize: 12, color: "#2d6a2d", margin: "8px 0 0" }}>
+            Uploading photo...
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Avatar & Status */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm text-center">
-            <div className="relative inline-block mb-4">
-              <div className={`w-32 h-32 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl ring-1 ring-gray-100 ${uploading ? 'opacity-50' : ''}`}>
-                <img 
-                  src={profile?.avatar_url ?? `https://ui-avatars.com/api/?name=${profile?.full_name || 'User'}&background=random`}
-                  className="w-full h-full object-cover" 
-                  alt="Profile"
-                />
-              </div>
-              <button 
-                onClick={() => avatarRef.current?.click()}
-                className="absolute -bottom-2 -right-2 bg-primary text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                title="Change Photo"
-              >
-                📸
-              </button>
-              <input ref={avatarRef} type="file" accept="image/*" className="hidden"
-                onChange={e => { if (e.target.files?.[0]) handleAvatarUpload(e.target.files[0]); }} />
-            </div>
-            
-            <h2 className="font-black text-gray-900 truncate">{profile?.full_name || "Community Member"}</h2>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 mb-4">{profile?.email}</p>
-            
-            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-              profile?.status === "approved" ? "bg-green-50 text-green-600 border border-green-100" : "bg-orange-50 text-orange-600 border border-orange-100"
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${profile?.status === "approved" ? "bg-green-500" : "bg-orange-500 animate-pulse"}`}></span>
-              {profile?.status || "Pending"}
-            </div>
+      {/* Edit form */}
+      <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24, marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2d6a2d", marginBottom: 16 }}>
+          Edit Profile
+        </h2>
+        <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Full Name</label>
+            <input value={form.full_name} onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))} style={inputStyle} />
           </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Phone Number</label>
+            <input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Date of Birth</label>
+            <input type="date" value={form.date_of_birth} onChange={(e) => setForm((p) => ({ ...p, date_of_birth: e.target.value }))} style={inputStyle} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Sex</label>
+            <select value={form.sex} onChange={(e) => setForm((p) => ({ ...p, sex: e.target.value }))} style={inputStyle}>
+              <option value="">-- Select --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Village</label>
+            <select value={form.village} onChange={(e) => setForm((p) => ({ ...p, village: e.target.value }))} style={inputStyle}>
+              <option value="">-- Select --</option>
+              {VILLAGES.map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <button type="submit" disabled={loading}
+            style={{ background: loading ? "#9ca3af" : "#2d6a2d", color: "white", border: "none", padding: 14, borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </form>
+      </div>
 
-          <div className="bg-gray-900 rounded-[2rem] p-6 text-white shadow-xl shadow-gray-200">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Security Notice</h3>
-            <p className="text-[11px] leading-relaxed opacity-70">
-              Only verified members can participate in Umunna groups and view community files. Keep your profile updated to ensure uninterrupted access.
-            </p>
-          </div>
+      {/* Account info */}
+      <div style={{ background: "white", borderRadius: 16, border: "1px solid #e5e7eb", padding: 24 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#6b3a1f", marginBottom: 14 }}>Account Info</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {[
+            { label: "Email",        value: profile?.email },
+            { label: "Village",      value: profile?.village || "Not set" },
+            { label: "Role",         value: primaryRole },
+            { label: "Status",       value: profile?.status },
+            { label: "Member since", value: profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "—" },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}>
+              <span style={{ fontWeight: 600, color: "#374151" }}>{label}</span>
+              <span style={{ color: "#6b7280" }}>{value}</span>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Right Column: Form */}
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSave} className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
-                <input 
-                  value={form.full_name} 
-                  onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
-                <input 
-                  value={form.phone} 
-                  onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Village</label>
-                <select 
-                  value={form.village} 
-                  onChange={e => setForm(p => ({ ...p, village: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all"
-                >
-                  <option value="">Select Village</option>
-                  {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Date of Birth</label>
-                <input 
-                  type="date" 
-                  value={form.date_of_birth} 
-                  onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all" 
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Sex</label>
-                <select 
-                  value={form.sex} 
-                  onChange={e => setForm(p => ({ ...p, sex: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-primary transition-all"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-gray-50">
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full bg-primary text-white py-4 rounded-2xl font-black shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-[0.98] disabled:opacity-60"
-              >
-                {loading ? "Updating Profile..." : "Save Changes"}
-              </button>
-            </div>
-          </form>
-          
-          <div className="mt-8 flex justify-center">
-            <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
-              Joined Akpu Community on {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "..."}
-            </p>
-          </div>
-        </div>
+      {/* Security notice */}
+      <div style={{ background: "#1a2e1a", borderRadius: 16, padding: 20, marginTop: 16 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#4a9e4a", margin: "0 0 8px", textTransform: "uppercase" }}>
+          Security Notice
+        </p>
+        <p style={{ fontSize: 13, color: "#a5c8a5", margin: 0, lineHeight: 1.5 }}>
+          Only verified members can participate in Umunna groups and view community files. Keep your profile updated to ensure uninterrupted access.
+        </p>
       </div>
     </div>
   );
