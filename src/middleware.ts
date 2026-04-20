@@ -11,7 +11,9 @@ export async function middleware(req: NextRequest) {
       cookies: {
         getAll() { return req.cookies.getAll(); },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            req.cookies.set(name, value)
+          );
           res = NextResponse.next({ request: { headers: req.headers } });
           cookiesToSet.forEach(({ name, value, options }) =>
             res.cookies.set(name, value, options)
@@ -32,69 +34,60 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isProtected && session) {
-
-    // Check if user is admin FIRST before anything else
-    const { data: adminRole } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "super_admin")
-      .maybeSingle();
-
-    const { data: communityAdminRole } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "community_admin")
-      .maybeSingle();
-
-    const { data: groupAdminRole } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "group_admin")
-      .maybeSingle();
-
-    const isAdmin = !!(adminRole || communityAdminRole || groupAdminRole);
-
-    // ADMINS — skip all other checks, always allow through
-    if (isAdmin) {
-      return res;
-    }
-
-    // NON-ADMIN USERS — run full checks
-    const { data: userRecord } = await supabase
+    // Get user profile only — single query, no joins
+    const { data: user } = await supabase
       .from("users")
-      .select("status, force_password_change, village")
+      .select("status, village, force_password_change")
       .eq("id", session.user.id)
       .single();
 
-    if (!userRecord) {
-      return NextResponse.redirect(new URL("/auth/kyc", req.url));
+    // No user record yet
+    if (!user) {
+      if (path !== "/auth/kyc") {
+        return NextResponse.redirect(new URL("/auth/kyc", req.url));
+      }
+      return res;
     }
 
-    if (userRecord.force_password_change) {
+    // Force password change
+    if (user.force_password_change) {
       return NextResponse.redirect(new URL("/auth/change-password", req.url));
     }
 
-    if (!userRecord.village) {
-      return NextResponse.redirect(new URL("/auth/kyc", req.url));
+    // Status-based redirects only for /dashboard
+    if (path.startsWith("/dashboard")) {
+      if (user.status === "suspended") {
+        return NextResponse.redirect(new URL("/auth/suspended", req.url));
+      }
+      if (user.status === "rejected") {
+        return NextResponse.redirect(new URL("/auth/rejected", req.url));
+      }
+
+      // No village = KYC not done
+      if (!user.village) {
+        return NextResponse.redirect(new URL("/auth/kyc", req.url));
+      }
+
+      // Has village but still pending = show pending page
+      // EXCEPTION: if status is approved, always let through
+      if (user.status === "pending") {
+        return NextResponse.redirect(new URL("/auth/pending", req.url));
+      }
     }
 
-    if (userRecord.status === "pending") {
-      return NextResponse.redirect(new URL("/auth/pending", req.url));
-    }
-
-    if (userRecord.status === "suspended") {
-      return NextResponse.redirect(new URL("/auth/suspended", req.url));
-    }
-
-    if (userRecord.status === "rejected") {
-      return NextResponse.redirect(new URL("/auth/rejected", req.url));
-    }
-
+    // For /admin paths — check role separately
     if (path.startsWith("/admin")) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .in("role", ["super_admin", "community_admin", "group_admin"])
+        .limit(1)
+        .maybeSingle();
+
+      if (!roleRow) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
     }
   }
 
