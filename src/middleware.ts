@@ -24,9 +24,10 @@ export async function middleware(req: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const path = req.nextUrl.pathname;
 
-  const protectedPaths = ["/dashboard", "/admin"];
-  const isProtected = protectedPaths.some((p) => path.startsWith(p));
+  const isProtected =
+    path.startsWith("/dashboard") || path.startsWith("/admin");
 
+  // Not logged in — redirect to login
   if (isProtected && !session) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
@@ -38,49 +39,66 @@ export async function middleware(req: NextRequest) {
       .eq("id", session.user.id)
       .single();
 
-    // Force password change
-    if (userRecord?.force_password_change && path !== "/auth/change-password") {
-      return NextResponse.redirect(new URL("/auth/change-password", req.url));
-    }
-
-    // Not submitted KYC yet — redirect to KYC
-    if (
-      path.startsWith("/dashboard") &&
-      !path.startsWith("/dashboard") === false &&
-      !userRecord?.village &&
-      path !== "/auth/kyc"
-    ) {
+    // No user record at all — go to KYC
+    if (!userRecord) {
       return NextResponse.redirect(new URL("/auth/kyc", req.url));
     }
 
-    // Pending — can only see /auth/pending
-    if (userRecord?.status === "pending" && path.startsWith("/dashboard")) {
+    // Force password change
+    if (
+      userRecord.force_password_change &&
+      path !== "/auth/change-password"
+    ) {
+      return NextResponse.redirect(new URL("/auth/change-password", req.url));
+    }
+
+    // Check roles
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+    const roles = roleData?.map((r) => r.role) ?? [];
+    const isAdmin = roles.some((r) =>
+      ["super_admin", "community_admin", "group_admin"].includes(r)
+    );
+
+    // ADMIN USERS — bypass all status checks, go straight through
+    if (isAdmin) {
+      // Only check admin path permission
+      if (path.startsWith("/admin")) {
+        return res; // admins can always access /admin
+      }
+      return res; // admins can always access /dashboard
+    }
+
+    // REGULAR USERS — check KYC and status
+
+    // Has not submitted KYC yet (no village means KYC not done)
+    if (!userRecord.village && path.startsWith("/dashboard")) {
+      // Only redirect to KYC if not already going there
+      if (path !== "/auth/kyc") {
+        return NextResponse.redirect(new URL("/auth/kyc", req.url));
+      }
+    }
+
+    // Pending approval
+    if (userRecord.status === "pending" && path.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/auth/pending", req.url));
     }
 
     // Suspended
-    if (userRecord?.status === "suspended" && path.startsWith("/dashboard")) {
+    if (userRecord.status === "suspended" && path.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/auth/suspended", req.url));
     }
 
     // Rejected
-    if (userRecord?.status === "rejected" && path.startsWith("/dashboard")) {
+    if (userRecord.status === "rejected" && path.startsWith("/dashboard")) {
       return NextResponse.redirect(new URL("/auth/rejected", req.url));
     }
 
-    // Admin route protection
-    if (path.startsWith("/admin")) {
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id);
-      const roles = roleData?.map((r) => r.role) ?? [];
-      const isAdmin = roles.some((r) =>
-        ["super_admin", "community_admin", "group_admin"].includes(r)
-      );
-      if (!isAdmin) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
+    // Non-admin trying to access /admin
+    if (path.startsWith("/admin") && !isAdmin) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 
