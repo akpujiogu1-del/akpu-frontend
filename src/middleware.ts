@@ -34,60 +34,59 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isProtected && session) {
-    // Get user profile only — single query, no joins
     const { data: user } = await supabase
       .from("users")
       .select("status, village, force_password_change")
       .eq("id", session.user.id)
       .single();
 
-    // No user record yet
+    // No record at all
     if (!user) {
-      if (path !== "/auth/kyc") {
-        return NextResponse.redirect(new URL("/auth/kyc", req.url));
-      }
-      return res;
+      return NextResponse.redirect(new URL("/auth/kyc", req.url));
     }
 
     // Force password change
     if (user.force_password_change) {
-      return NextResponse.redirect(new URL("/auth/change-password", req.url));
+      return NextResponse.redirect(
+        new URL("/auth/change-password", req.url)
+      );
     }
 
-    // Status-based redirects only for /dashboard
-    if (path.startsWith("/dashboard")) {
-      if (user.status === "suspended") {
-        return NextResponse.redirect(new URL("/auth/suspended", req.url));
-      }
-      if (user.status === "rejected") {
-        return NextResponse.redirect(new URL("/auth/rejected", req.url));
-      }
+    // APPROVED users — always let through, no more checks
+    if (user.status === "approved") {
+      // Only block non-admins from /admin paths
+      if (path.startsWith("/admin")) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .in("role", ["super_admin", "community_admin", "group_admin"])
+          .limit(1)
+          .maybeSingle();
 
-      // No village = KYC not done
+        if (!roleRow) {
+          return NextResponse.redirect(new URL("/dashboard", req.url));
+        }
+      }
+      return res;
+    }
+
+    // SUSPENDED / REJECTED
+    if (user.status === "suspended") {
+      return NextResponse.redirect(new URL("/auth/suspended", req.url));
+    }
+    if (user.status === "rejected") {
+      return NextResponse.redirect(new URL("/auth/rejected", req.url));
+    }
+
+    // PENDING status
+    if (user.status === "pending") {
+      // If no village yet — send to KYC to fill form
       if (!user.village) {
         return NextResponse.redirect(new URL("/auth/kyc", req.url));
       }
-
-      // Has village but still pending = show pending page
-      // EXCEPTION: if status is approved, always let through
-      if (user.status === "pending") {
-        return NextResponse.redirect(new URL("/auth/pending", req.url));
-      }
-    }
-
-    // For /admin paths — check role separately
-    if (path.startsWith("/admin")) {
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .in("role", ["super_admin", "community_admin", "group_admin"])
-        .limit(1)
-        .maybeSingle();
-
-      if (!roleRow) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
+      // Has village — KYC submitted, waiting for approval
+      return NextResponse.redirect(new URL("/auth/pending", req.url));
     }
   }
 
