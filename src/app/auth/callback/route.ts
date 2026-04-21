@@ -24,10 +24,9 @@ export async function GET(req: Request) {
         },
       }
     );
-
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // Always go to dashboard — layout will handle redirects
+  // Always send to dashboard — layout handles all routing from there
   return NextResponse.redirect(new URL("/dashboard", req.url));
 }

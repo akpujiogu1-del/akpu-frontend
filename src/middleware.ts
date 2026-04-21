@@ -14,7 +14,7 @@ export async function middleware(req: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             req.cookies.set(name, value)
           );
-          res = NextResponse.next({ request: { headers: req.headers } });
+          res = NextResponse.next({ request: req });
           cookiesToSet.forEach(({ name, value, options }) =>
             res.cookies.set(name, value, options)
           );
@@ -24,24 +24,19 @@ export async function middleware(req: NextRequest) {
   );
 
   const { data: { session } } = await supabase.auth.getSession();
-  const path = req.nextUrl.pathname;
 
-  // Not logged in — send to login
-  if (
-    (path.startsWith("/dashboard") || path.startsWith("/admin")) &&
-    !session
-  ) {
+  const protectedPaths = ["/dashboard", "/admin"];
+  const isProtected = protectedPaths.some((p) =>
+    req.nextUrl.pathname.startsWith(p)
+  );
+
+  if (isProtected && !session) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
-  // Logged in — always let through
-  // Status checks happen inside each page, not in middleware
   return res;
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/admin/:path*",
-  ],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

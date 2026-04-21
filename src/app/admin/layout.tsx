@@ -28,13 +28,13 @@ export default async function AdminLayout({
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/auth/login");
 
-  const { data: roles } = await supabase
+  const { data: roleRows } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", session.user.id);
 
-  const userRoles = roles?.map((r) => r.role) ?? [];
-  const isAdmin = userRoles.some((r) =>
+  const roles = roleRows?.map((r) => r.role) ?? [];
+  const isAdmin = roles.some((r) =>
     ["super_admin", "community_admin", "group_admin"].includes(r)
   );
 

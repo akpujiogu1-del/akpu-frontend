@@ -29,37 +29,35 @@ export default async function DashboardLayout({
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/auth/login");
 
-  // Get user status
+  const uid = session.user.id;
+
+  // Single query for user record
   const { data: user } = await supabase
     .from("users")
-    .select("status, village, force_password_change")
-    .eq("id", session.user.id)
+    .select("id, status, village, full_name, avatar_url, force_password_change")
+    .eq("id", uid)
     .single();
 
-  // Get roles
-  const { data: roles } = await supabase
+  // Single query for roles
+  const { data: roleRows } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", session.user.id);
+    .eq("user_id", uid);
 
-  const userRoles = roles?.map((r) => r.role) ?? [];
-  const isAdmin = userRoles.some((r) =>
+  const roles = roleRows?.map((r) => r.role) ?? [];
+  const isAdmin = roles.some((r) =>
     ["super_admin", "community_admin", "group_admin"].includes(r)
   );
 
+  // No user record yet
+  if (!user) redirect("/auth/kyc");
+
   // Force password change
-  if (user?.force_password_change) {
-    redirect("/auth/change-password");
-  }
+  if (user.force_password_change) redirect("/auth/change-password");
 
-  // APPROVED or ADMIN — always allow in
-  if (user?.status === "approved" || isAdmin) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("*, user_roles(role)")
-      .eq("id", session.user.id)
-      .single();
-
+  // ADMIN — always allow through
+  if (isAdmin) {
+    const profile = { ...user, user_roles: roleRows };
     return (
       <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: "Outfit, sans-serif" }}>
         <DashboardNav profile={profile} />
@@ -69,12 +67,8 @@ export default async function DashboardLayout({
             <main>{children}</main>
             <aside className="hidden md:block">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} style={{
-                  background: "white", border: "1px solid #e5e7eb",
-                  borderRadius: 12, padding: 16, marginBottom: 12,
-                  textAlign: "center", color: "#9ca3af", fontSize: 13,
-                }}>
-                  <p style={{ fontSize: 24, margin: "0 0 6px" }}>📣</p>
+                <div key={i} style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 12, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                  <p style={{ fontSize: 24, margin: "0 0 4px" }}>📣</p>
                   <p style={{ fontWeight: 600, margin: 0 }}>Adverts</p>
                 </div>
               ))}
@@ -85,22 +79,34 @@ export default async function DashboardLayout({
     );
   }
 
-  // PENDING with no village — needs KYC
-  if (user?.status === "pending" && !user?.village) {
-    redirect("/auth/kyc");
+  // REGULAR USER routing
+  if (user.status === "approved") {
+    const profile = { ...user, user_roles: roleRows };
+    return (
+      <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: "Outfit, sans-serif" }}>
+        <DashboardNav profile={profile} />
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
+          <div style={{ display: "grid", gap: 20 }}
+            className="md:grid-cols-[1fr_260px]">
+            <main>{children}</main>
+            <aside className="hidden md:block">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 12, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                  <p style={{ fontSize: 24, margin: "0 0 4px" }}>📣</p>
+                  <p style={{ fontWeight: 600, margin: 0 }}>Adverts</p>
+                </div>
+              ))}
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // PENDING with village — waiting for approval
-  if (user?.status === "pending" && user?.village) {
-    redirect("/auth/pending");
-  }
+  if (user.status === "suspended") redirect("/auth/suspended");
+  if (user.status === "rejected")  redirect("/auth/rejected");
 
-  // Suspended
-  if (user?.status === "suspended") redirect("/auth/suspended");
-
-  // Rejected
-  if (user?.status === "rejected") redirect("/auth/rejected");
-
-  // No user record
-  redirect("/auth/kyc");
+  // Pending: check if KYC was submitted
+  if (!user.village) redirect("/auth/kyc");
+  redirect("/auth/pending");
 }
