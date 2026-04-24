@@ -6,29 +6,26 @@ export default function AnnouncementBanner() {
   const [text, setText] = useState<string | null>(null);
 
   async function load() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("announcements")
       .select("text")
       .eq("active", true)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    setText(data?.text ?? null);
+    if (!error && data?.text) setText(data.text);
   }
 
   useEffect(() => {
     load();
-
-    const channel = supabase
-      .channel("announcements-live")
-      .on(
-        "postgres_changes",
+    const ch = supabase
+      .channel("announce-live")
+      .on("postgres_changes",
         { event: "*", schema: "public", table: "announcements" },
         () => load()
       )
       .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   if (!text) return null;
@@ -43,12 +40,12 @@ export default function AnnouncementBanner() {
     }}>
       <div style={{
         display: "inline-block",
-        animation: "marquee 35s linear infinite",
         paddingLeft: "100%",
+        animation: "marquee 30s linear infinite",
         fontSize: 14,
         fontWeight: 600,
       }}>
-        📢 &nbsp;&nbsp; {text} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📢 &nbsp;&nbsp; {text}
+        📢 &nbsp;&nbsp; {text} &nbsp;&nbsp;&nbsp;&nbsp; 📢 &nbsp;&nbsp; {text}
       </div>
       <style>{`
         @keyframes marquee {
