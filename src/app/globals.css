@@ -1,32 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --primary: #2d6a2d;
-  --primary-light: #4a9e4a;
-  --primary-dark: #1a4a1a;
-  --secondary: #6b3a1f;
-  --secondary-light: #a0622a;
-  --secondary-dark: #4a2510;
-  --white: #ffffff;
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@theme {
-  --color-primary: var(--primary);
-  --color-primary-light: var(--primary-light);
-  --color-primary-dark: var(--primary-dark);
-  --color-secondary: var(--secondary);
-  --color-secondary-light: var(--secondary-light);
-  --color-secondary-dark: var(--secondary-dark);
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: "Outfit", "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* Fallback classes in case the theme engine fails */
-.bg-primary { background-color: #2d6a2d !important; }
-.text-primary { color: #2d6a2d !important; }
-.bg-secondary { background-color: #6b3a1f !important; }
-.text-secondary { color: #6b3a1f !important; }
-.text-white { color: #ffffff !important; }
-
-body {
-  background-color: white;
-  color: #1a1a1a;
+img {
+  max-width: 100%;
+  height: auto;
 }
+
+/* Prevent horizontal scroll on mobile */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile nav fixes */
+@media (max-width: 768px) {
+  nav {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Ensure grids collapse on mobile */
+  .md\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .md\:grid-cols-\[1fr_260px\] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .md\:grid-cols-\[1fr_280px\] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hide desktop-only sidebar on mobile */
+  .hidden.md\:block {
+    display: none !important;
+  }
+
+  /* Feed cards full width */
+  .rounded-xl {
+    border-radius: 12px;
+  }
+
+  /* Admin tabs scroll on mobile */
+  .overflow-x-auto {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Text size adjustments */
+  h1 { font-size: 28px !important; }
+  h2 { font-size: 22px !important; }
+}
+
+/* Announcement marquee */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Custom scrollbar for desktop */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #2d6a2d; border-radius: 3px; }

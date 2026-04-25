@@ -63,7 +63,7 @@ export default async function DashboardLayout({
         <DashboardNav profile={profile} />
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
           <div style={{ display: "grid", gap: 20 }}
-            className="md:grid-cols-[1fr_260px]">
+            style={{ display: "grid", gap: 20, gridTemplateColumns: "1fr" }} className="md:grid-cols-[1fr_260px]">
             <main>{children}</main>
             <aside className="hidden md:block">
               {[1, 2, 3, 4].map((i) => (
@@ -87,7 +87,7 @@ export default async function DashboardLayout({
         <DashboardNav profile={profile} />
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
           <div style={{ display: "grid", gap: 20 }}
-            className="md:grid-cols-[1fr_260px]">
+            style={{ display: "grid", gap: 20, gridTemplateColumns: "1fr" }} className="md:grid-cols-[1fr_260px]">
             <main>{children}</main>
             <aside className="hidden md:block">
               {[1, 2, 3, 4].map((i) => (

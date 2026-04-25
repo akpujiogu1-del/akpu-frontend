@@ -34,7 +34,7 @@ export default function LandingClient({ session, settings: s, hallOfFame, commun
       <Navbar session={session} />
 
       {/* HERO */}
-      <section style={{ background: "#eaf5ea" }} className="grid md:grid-cols-2 gap-6 p-6 md:p-10">
+      <section style={{ background: "#eaf5ea", display: "grid", gridTemplateColumns: "1fr", gap: 16, padding: 16 }} className="md:grid-cols-2 md:p-10">
         <div className="aspect-video rounded-xl overflow-hidden shadow-lg">
           {s.landing_video_url ? (
             <iframe src={toYTEmbed(s.landing_video_url)} className="w-full h-full" allowFullScreen title="Akpu Community Video" />
@@ -107,7 +107,7 @@ export default function LandingClient({ session, settings: s, hallOfFame, commun
       {/* OUR LEADERS */}
       <section className="py-12" style={{ background: "white" }}>
         <h2 style={{ color: "#2d6a2d" }} className="text-2xl font-bold text-center mb-8">Our Leaders</h2>
-        <div className="max-w-6xl mx-auto px-6 flex gap-4 overflow-x-auto pb-2">
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px 8px", display: "flex", gap: 16, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           {community.length > 0 ? community.map((l) => (
             <div key={l.id} className="min-w-[160px] rounded-xl p-4 text-center shrink-0" style={{ background: "#eaf5ea" }}>
               <img src={l.photo_url ?? "/avatar-placeholder.png"} alt={l.name}
