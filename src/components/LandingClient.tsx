@@ -34,7 +34,7 @@ export default function LandingClient({ session, settings: s, hallOfFame, commun
       <Navbar session={session} />
 
       {/* HERO */}
-      <section style={{ background: "#eaf5ea", display: "grid", gridTemplateColumns: "1fr", gap: 16, padding: 16 }} className="md:grid-cols-2 md:p-10">
+      <section style={{ background: "#eaf5ea", padding: "24px 16px" }} className="grid md:grid-cols-2 gap-6">
         <div style={{ width: "100%", maxWidth: 480, aspectRatio: "16/9", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
           {s.landing_video_url ? (
             <iframe src={toYTEmbed(s.landing_video_url)} className="w-full h-full" style={{ width: "100%", height: "100%" }} allowFullScreen title="Akpu Community Video" />

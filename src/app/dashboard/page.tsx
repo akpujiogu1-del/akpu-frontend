@@ -145,7 +145,7 @@ export default function FeedPage() {
       <AnnouncementRow />
 
       {/* Composer */}
-      <div style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", padding: 16, marginBottom: 16 }}>
+      <div style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", padding: 12, marginBottom: 12 }}>
         <div style={{ display: "flex", gap: 10 }}>
           <img src={profile?.avatar_url ?? "/avatar-placeholder.png"}
             style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", border: "2px solid #2d6a2d", flexShrink: 0 }} />

@@ -76,7 +76,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
         <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, overflowX: "auto" }}>
           {NAV.map(({ href, icon, label }) => (
             <Link key={href} href={href}
-              style={{ color: "white", textDecoration: "none", padding: "6px 10px", borderRadius: 8, fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, minWidth: 50, flexShrink: 0 }}
+              style={{ color: "white", textDecoration: "none", padding: "6px 10px", borderRadius: 8, fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, minWidth: 44, flexShrink: 0 }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
               <span style={{ fontSize: 18 }}>{icon}</span>
