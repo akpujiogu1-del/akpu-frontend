@@ -523,6 +523,7 @@ export default function SuperAdminPage() {
             </div>
             {[
               { key: "landing_video_url", label: "🎬 Landing Page YouTube URL" },
+              { key: "map_embed_url", label: "🗺️ Google Maps Embed URL" },
               { key: "tiktok_url",        label: "🎵 TikTok URL" },
               { key: "facebook_url",      label: "👥 Facebook URL" },
               { key: "instagram_url",     label: "📸 Instagram URL" },
