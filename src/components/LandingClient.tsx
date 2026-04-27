@@ -50,19 +50,28 @@ export default function LandingClient({ session, settings: s, hallOfFame, commun
           <p style={{ color: "#6b3a1f" }} className="font-bold text-lg mb-1">Our Location</p>
           <p className="text-sm text-gray-600 mb-1">Akpu Town, Orumba South LGA</p>
           <p className="text-sm text-gray-600 mb-3">Anambra State, Nigeria</p>
-          {s.map_image_url ? (
+          {s.map_embed_url ? (
+            <iframe
+              src={s.map_embed_url}
+              style={{ width: "100%", height: 220, borderRadius: 12, border: "2px solid #2d6a2d", display: "block" }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Akpu Town Map"
+            />
+          ) : s.map_image_url ? (
             <img
               src={s.map_image_url}
               alt="Akpu Town Map"
-              style={{ width: "100%", height: 256, objectFit: "cover", borderRadius: 12, border: "2px solid #2d6a2d" }}
+              style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: 12, border: "2px solid #2d6a2d" }}
             />
           ) : (
-            <div style={{ background: "#eaf5ea", border: "2px dashed #2d6a2d", color: "#2d6a2d", width: "100%", height: 256, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <div style={{ background: "#eaf5ea", border: "2px dashed #2d6a2d", color: "#2d6a2d", width: "100%", height: 220, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <span style={{ fontSize: 36 }}>🗺️</span>
               <p style={{ fontWeight: 600, margin: 0 }}>Map</p>
-              <p style={{ fontSize: 12, opacity: 0.7, margin: 0 }}>Upload map image in Admin Settings</p>
+              <p style={{ fontSize: 12, opacity: 0.7, margin: 0 }}>Set in Admin Settings</p>
             </div>
-          )}
+          )}}
         </div>
       </section>
 

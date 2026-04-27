@@ -513,13 +513,31 @@ export default function SuperAdminPage() {
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2d6a2d", marginBottom: 16 }}>⚙️ Site Settings</h2>
             <div style={CARD}>
               <label style={{ display: "block", fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 8 }}>🗺️ Location Map Image</label>
-              <button onClick={() => mapRef.current?.click()} style={{ ...BB, marginBottom: 12 }}>📤 Upload Map Image</button>
-              <input ref={mapRef} type="file" accept="image/*" style={{ display: "none" }}
-                onChange={(e) => { if (e.target.files?.[0]) uploadMapImage(e.target.files[0]); }} />
-              {mapPreview
-                ? <img src={mapPreview} style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, border: "2px solid #2d6a2d" }} />
-                : <div style={{ height: 80, background: "#eaf5ea", border: "2px dashed #2d6a2d", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#2d6a2d", fontSize: 13 }}>No map uploaded</div>
-              }
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  id="s-map_embed_url"
+                  defaultValue={data?.settings["map_embed_url"] ?? ""}
+                  placeholder="Paste Google Maps embed URL here..."
+                  style={{ ...S, flex: 1 }}
+                />
+                <button
+                  onClick={() => {
+                    const el = document.getElementById("s-map_embed_url") as HTMLInputElement;
+                    saveSetting("map_embed_url", el.value);
+                  }}
+                  disabled={saving}
+                  style={BG}>
+                  Save
+                </button>
+              </div>
+              {data?.settings["map_embed_url"] && (
+                <iframe
+                  src={data.settings["map_embed_url"]}
+                  style={{ width: "100%", height: 160, borderRadius: 10, border: "2px solid #2d6a2d", marginTop: 10, display: "block" }}
+                  loading="lazy"
+                  title="Map Preview"
+                />
+              )}
             </div>
             {[
               { key: "landing_video_url", label: "🎬 Landing Page YouTube URL" },

@@ -65,7 +65,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
 
   return (
     <nav style={{ background: "#2d6a2d", position: "sticky", top: 0, zIndex: 50, fontFamily: "Outfit, sans-serif" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 8px", display: "flex", alignItems: "center", height: 56, overflow: "hidden", width: "100%" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 8px", display: "flex", alignItems: "center", height: 56, width: "100%" }}>
 
         <Link href="/dashboard"
           style={{ color: "white", fontWeight: 800, fontSize: 18, textDecoration: "none", marginRight: 16, flexShrink: 0 }}>
@@ -93,7 +93,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
         </div>
 
         {/* Right: notifications + avatar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 8, flexShrink: 0, position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4, flexShrink: 0, position: "relative" }}>
 
           {/* Notification bell */}
           <button onClick={() => setShowNotifs(!showNotifs)}

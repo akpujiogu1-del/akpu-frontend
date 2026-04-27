@@ -64,7 +64,7 @@ export default async function DashboardLayout({
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: "Outfit, sans-serif" }}>
       <DashboardNav profile={profile} />
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "12px 8px", width: "100%", boxSizing: "border-box" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "12px 8px" }}>
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr",

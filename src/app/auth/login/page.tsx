@@ -88,7 +88,7 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-[0.98] disabled:opacity-60"
+            style={{ width: "100%", background: loading ? "#9ca3af" : "#2d6a2d", color: "white", padding: "16px", borderRadius: 16, fontWeight: 700, border: "none", cursor: "pointer", fontSize: 15 }}
           >
             {loading ? "Verifying..." : "Sign In to Portal"}
           </button>
