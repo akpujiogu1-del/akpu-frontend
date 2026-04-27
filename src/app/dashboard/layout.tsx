@@ -70,9 +70,9 @@ export default async function DashboardLayout({
           gridTemplateColumns: "1fr",
           gap: 20,
         }}
-          className="md:grid-cols-[1fr_260px]">
+          className="lg:grid-cols-[1fr_260px]">
           <main>{children}</main>
-          <aside className="hidden md:block">
+          <aside className="hidden lg:block">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} style={{
                 background: "white",

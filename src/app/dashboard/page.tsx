@@ -141,7 +141,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+    <div style={{ width: "100%", maxWidth: 640, margin: "0 auto", minWidth: 0 }}>
       <AnnouncementRow />
 
       {/* Composer */}
@@ -151,7 +151,7 @@ export default function FeedPage() {
             style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", border: "2px solid #2d6a2d", flexShrink: 0 }} />
           <textarea value={content} onChange={(e) => setContent(e.target.value)}
             placeholder="What's on your mind?" rows={3}
-            style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px", fontSize: 14, resize: "none", outline: "none", fontFamily: "inherit" }} />
+            style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px", fontSize: 14, resize: "none", outline: "none", fontFamily: "inherit", minWidth: 0, width: "100%" }} />
         </div>
 
         {imagePreview && (
@@ -201,7 +201,7 @@ export default function FeedPage() {
           : [];
 
         return (
-          <div key={post.id} style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", marginBottom: 16, overflow: "hidden" }}>
+          <div key={post.id} style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", marginBottom: 16, overflow: "hidden", width: "100%", minWidth: 0 }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
               <img src={post.users?.avatar_url ?? "/avatar-placeholder.png"}

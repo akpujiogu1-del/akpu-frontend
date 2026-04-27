@@ -65,7 +65,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
 
   return (
     <nav style={{ background: "#2d6a2d", position: "sticky", top: 0, zIndex: 50, fontFamily: "Outfit, sans-serif" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 8px", display: "flex", alignItems: "center", height: 56, width: "100%" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 6px", display: "flex", alignItems: "center", height: 56, width: "100%", overflowX: "hidden" }}>
 
         <Link href="/dashboard"
           style={{ color: "white", fontWeight: 800, fontSize: 18, textDecoration: "none", marginRight: 16, flexShrink: 0 }}>
@@ -73,7 +73,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
         </Link>
 
         {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, overflowX: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, overflowX: "auto", minWidth: 0, scrollbarWidth: "none" }}>
           {NAV.map(({ href, icon, label }) => (
             <Link key={href} href={href}
               style={{ color: "white", textDecoration: "none", padding: "6px 10px", borderRadius: 8, fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, minWidth: 44, flexShrink: 0 }}
@@ -108,7 +108,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
 
           {/* Notification dropdown */}
           {showNotifs && (
-            <div style={{ position: "absolute", top: 44, right: 40, width: 320, background: "white", borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid #e5e7eb", zIndex: 100, maxHeight: 400, overflowY: "auto" }}>
+            <div style={{ position: "fixed", top: 56, right: 8, width: "min(320px, calc(100vw - 16px))", background: "white", borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid #e5e7eb", zIndex: 100, maxHeight: 400, overflowY: "auto" }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <p style={{ margin: 0, fontWeight: 700, color: "#2d6a2d", fontSize: 14 }}>Notifications</p>
                 {unread > 0 && (
