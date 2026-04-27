@@ -71,7 +71,7 @@ export default function LandingClient({ session, settings: s, hallOfFame, commun
               <p style={{ fontWeight: 600, margin: 0 }}>Map</p>
               <p style={{ fontSize: 12, opacity: 0.7, margin: 0 }}>Set in Admin Settings</p>
             </div>
-          )}}
+          )}
         </div>
       </section>
 
