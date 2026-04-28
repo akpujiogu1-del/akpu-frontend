@@ -14,6 +14,7 @@ const TABS = [
   { id: "settings", label: "Site Settings",    icon: "⚙️" },
   { id: "contacts", label: "Contact Messages", icon: "✉️" },
   { id: "logs",     label: "Activity Logs",    icon: "📋" },
+  { id: "adverts",  label: "Adverts",           icon: "📣" },
 ];
 
 type AdminData = {
@@ -585,6 +586,40 @@ export default function SuperAdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+
+        {/* ── ADVERTS ── */}
+        {tab === "adverts" && (
+          <div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2d6a2d", marginBottom: 16 }}>
+              📣 Adverts Management
+            </h2>
+            <div style={{ ...CARD, borderTop: "3px solid #2d6a2d" }}>
+              <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
+                Adverts appear beside the community feed on desktop. Each slot shows one advert card.
+                Use the Site Settings tab to manage social handles and links shown in advert spaces.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{ background: "#f9fafb", border: "2px dashed #e5e7eb", borderRadius: 12, padding: 20, textAlign: "center" }}>
+                    <p style={{ fontSize: 28, margin: "0 0 8px" }}>📣</p>
+                    <p style={{ fontWeight: 700, color: "#374151", margin: "0 0 4px", fontSize: 14 }}>Advert Slot {i}</p>
+                    <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Available for community notices</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 20, padding: 16, background: "#eaf5ea", borderRadius: 10 }}>
+                <p style={{ fontWeight: 700, color: "#2d6a2d", margin: "0 0 8px", fontSize: 14 }}>
+                  💡 Coming Soon: Paid Adverts
+                </p>
+                <p style={{ fontSize: 13, color: "#374151", margin: 0 }}>
+                  Community members and businesses will be able to place adverts here.
+                  Configure pricing and advert content from this panel.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

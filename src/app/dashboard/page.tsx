@@ -141,11 +141,11 @@ export default function FeedPage() {
   }
 
   return (
-    <div style={{ width: "100%", maxWidth: 640, margin: "0 auto", minWidth: 0 }}>
+    <div style={{ width: "100%", maxWidth: 640, margin: "0 auto", minWidth: 0, overflowX: "hidden" }}>
       <AnnouncementRow />
 
       {/* Composer */}
-      <div style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", padding: 12, marginBottom: 12 }}>
+      <div style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", padding: 12, marginBottom: 12, width: "100%", boxSizing: "border-box" }}>
         <div style={{ display: "flex", gap: 10 }}>
           <img src={profile?.avatar_url ?? "/avatar-placeholder.png"}
             style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", border: "2px solid #2d6a2d", flexShrink: 0 }} />
@@ -201,7 +201,7 @@ export default function FeedPage() {
           : [];
 
         return (
-          <div key={post.id} style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", marginBottom: 16, overflow: "hidden", width: "100%", minWidth: 0 }}>
+          <div key={post.id} style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", marginBottom: 12, overflow: "hidden", width: "100%", boxSizing: "border-box" }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
               <img src={post.users?.avatar_url ?? "/avatar-placeholder.png"}
