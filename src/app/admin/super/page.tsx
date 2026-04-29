@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
@@ -22,6 +23,87 @@ type AdminData = {
   gallery: any[]; groups: any[]; contacts: any[]; logs: any[];
   settings: Record<string, string>;
 };
+
+
+function AdvertsTab({ S, BG, BB, BR, CARD, saving, uploadImg, action, adverts, loadData }: any) {
+  const [form, setForm] = React.useState({ subject: "", body: "", image_url: "", slot: "1" });
+  const [uploading, setUploading] = React.useState(false);
+  const imgRef = React.useRef<HTMLInputElement>(null);
+
+  async function saveAdvert() {
+    if (!form.subject.trim()) { alert("Enter a subject"); return; }
+    await action({ action: "insert", table: "groups", data: {
+      name: form.subject,
+      description: form.body,
+      type: "advert",
+      avatar_url: form.image_url,
+    }});
+    setForm({ subject: "", body: "", image_url: "", slot: "1" });
+  }
+
+  async function handleImg(file: File) {
+    setUploading(true);
+    try {
+      const url = await uploadImg(file, "post-images");
+      setForm((p: any) => ({ ...p, image_url: url }));
+    } catch(e: any) { alert(e.message); }
+    setUploading(false);
+  }
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2d6a2d", marginBottom: 16 }}>📣 Adverts Management</h2>
+      <div style={{ ...CARD, borderTop: "3px solid #2d6a2d" }}>
+        <h3 style={{ fontWeight: 700, color: "#2d6a2d", marginBottom: 14, fontSize: 15 }}>➕ Create Advert</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input value={form.subject} onChange={(e) => setForm((p: any) => ({ ...p, subject: e.target.value }))}
+            placeholder="Subject / Title *" style={S} />
+          <textarea value={form.body} onChange={(e) => setForm((p: any) => ({ ...p, body: e.target.value }))}
+            placeholder="Advert write-up / description..." rows={4}
+            style={{ ...S, resize: "vertical" }} />
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={() => imgRef.current?.click()} disabled={uploading}
+              style={{ ...BB }}>{uploading ? "Uploading..." : "📷 Upload Image"}</button>
+            <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }}
+              onChange={(e) => { if (e.target.files?.[0]) handleImg(e.target.files[0]); }} />
+            {form.image_url && (
+              <img src={form.image_url} style={{ height: 48, borderRadius: 8, border: "1px solid #e5e7eb" }} />
+            )}
+          </div>
+          <button onClick={saveAdvert} disabled={saving} style={BG}>Publish Advert</button>
+        </div>
+      </div>
+
+      <h3 style={{ fontWeight: 700, color: "#374151", marginBottom: 12, fontSize: 15 }}>Published Adverts</h3>
+      {adverts.length === 0 ? (
+        <div style={{ ...CARD, textAlign: "center", padding: 32, color: "#9ca3af" }}>
+          <p style={{ fontSize: 32, margin: "0 0 8px" }}>📣</p>
+          <p style={{ fontWeight: 600 }}>No adverts yet</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+          {adverts.map((a: any) => (
+            <div key={a.id} style={{ ...CARD, padding: 0, overflow: "hidden" }}>
+              {a.avatar_url && (
+                <img src={a.avatar_url} style={{ width: "100%", height: 120, objectFit: "cover" }} />
+              )}
+              <div style={{ padding: 12 }}>
+                <p style={{ fontWeight: 700, color: "#2d6a2d", margin: "0 0 4px", fontSize: 14 }}>{a.name}</p>
+                {a.description && (
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 10px" }}>{a.description}</p>
+                )}
+                <button onClick={() => action({ action: "delete", table: "groups", id: a.id }).then(loadData)}
+                  disabled={saving} style={{ ...BR, fontSize: 12, padding: "5px 10px" }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SuperAdminPage() {
   const [tab, setTab]       = useState("kyc");
@@ -592,35 +674,7 @@ export default function SuperAdminPage() {
 
         {/* ── ADVERTS ── */}
         {tab === "adverts" && (
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2d6a2d", marginBottom: 16 }}>
-              📣 Adverts Management
-            </h2>
-            <div style={{ ...CARD, borderTop: "3px solid #2d6a2d" }}>
-              <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
-                Adverts appear beside the community feed on desktop. Each slot shows one advert card.
-                Use the Site Settings tab to manage social handles and links shown in advert spaces.
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} style={{ background: "#f9fafb", border: "2px dashed #e5e7eb", borderRadius: 12, padding: 20, textAlign: "center" }}>
-                    <p style={{ fontSize: 28, margin: "0 0 8px" }}>📣</p>
-                    <p style={{ fontWeight: 700, color: "#374151", margin: "0 0 4px", fontSize: 14 }}>Advert Slot {i}</p>
-                    <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Available for community notices</p>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 20, padding: 16, background: "#eaf5ea", borderRadius: 10 }}>
-                <p style={{ fontWeight: 700, color: "#2d6a2d", margin: "0 0 8px", fontSize: 14 }}>
-                  💡 Coming Soon: Paid Adverts
-                </p>
-                <p style={{ fontSize: 13, color: "#374151", margin: 0 }}>
-                  Community members and businesses will be able to place adverts here.
-                  Configure pricing and advert content from this panel.
-                </p>
-              </div>
-            </div>
-          </div>
+          <AdvertsTab S={S} BG={BG} BB={BB} BR={BR} CARD={CARD} saving={saving} uploadImg={uploadImg} action={action} adverts={(data?.groups ?? []).filter((g: any) => g.type === "advert")} loadData={loadData} />
         )}
 
         {/* ── LOGS ── */}

@@ -114,17 +114,25 @@ export default function FeedPage() {
   }
 
   async function deletePost(postId: string) {
-    const { error } = await supabase.from("posts")
-      .update({ deleted_at: new Date().toISOString() }).eq("id", postId);
-    if (error) toast.error(error.message);
+    const res = await fetch("/api/posts/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId, type: "post" }),
+    });
+    const data = await res.json();
+    if (data.error) toast.error(data.error);
     else { toast.success("Post deleted"); loadPosts(); }
   }
 
   async function deleteComment(commentId: string) {
-    const { error } = await supabase.from("comments")
-      .update({ deleted_at: new Date().toISOString() }).eq("id", commentId);
-    if (error) toast.error(error.message);
-    else loadPosts();
+    const res = await fetch("/api/posts/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId: commentId, type: "comment" }),
+    });
+    const data = await res.json();
+    if (!data.error) loadPosts();
+    else toast.error(data.error);
   }
 
   function timeAgo(d: string) {
@@ -203,7 +211,7 @@ export default function FeedPage() {
         return (
           <div key={post.id} style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", marginBottom: 12, overflow: "hidden", width: "100%", boxSizing: "border-box" }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 12px" }}>
               <img src={post.users?.avatar_url ?? "/avatar-placeholder.png"}
                 style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid #2d6a2d" }} />
               <div style={{ flex: 1 }}>
@@ -215,14 +223,14 @@ export default function FeedPage() {
               {isOwn && (
                 <button
                   onClick={() => deletePost(post.id)}
-                  style={{ background: "#fee2e2", border: "none", color: "#dc2626", cursor: "pointer", padding: "6px 10px", borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+                  style={{ background: "#fee2e2", border: "none", color: "#dc2626", cursor: "pointer", padding: "5px 8px", borderRadius: 8, fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
                   🗑️ Delete
                 </button>
               )}
             </div>
 
             {post.content && (
-              <p style={{ padding: "0 16px 12px", fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+              <p style={{ padding: "0 12px 10px", fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0, wordBreak: "break-word" }}>
                 {post.content}
               </p>
             )}
@@ -231,7 +239,7 @@ export default function FeedPage() {
             )}
 
             {/* Actions row */}
-            <div style={{ display: "flex", gap: 16, padding: "10px 16px", borderTop: "1px solid #f3f4f6" }}>
+            <div style={{ display: "flex", gap: 12, padding: "8px 12px", borderTop: "1px solid #f3f4f6" }}>
               <button onClick={() => toggleLike(post.id)}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: liked ? 700 : 400, color: liked ? "#2d6a2d" : "#6b7280", display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
                 👍 {post.likes?.length ?? 0}
@@ -244,7 +252,7 @@ export default function FeedPage() {
 
             {/* Comments section */}
             {showComments && (
-              <div style={{ padding: "0 16px 8px" }}>
+              <div style={{ padding: "0 10px 8px" }}>
                 {/* Load more button */}
                 {activeComments.length > 4 && !isExpanded && (
                   <button onClick={() => setExpandedComments((p) => ({ ...p, [post.id]: true }))}
@@ -264,7 +272,7 @@ export default function FeedPage() {
                     <div key={c.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                       <img src={c.users?.avatar_url ?? "/avatar-placeholder.png"}
                         style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                      <div style={{ background: "#f9fafb", borderRadius: 10, padding: "7px 12px", flex: 1 }}>
+                      <div style={{ background: "#f9fafb", borderRadius: 10, padding: "6px 10px", flex: 1, minWidth: 0, wordBreak: "break-word" }}>
                         <p style={{ fontSize: 12, fontWeight: 700, margin: "0 0 2px", color: "#2d6a2d" }}>
                           {c.users?.full_name}
                         </p>
@@ -283,17 +291,17 @@ export default function FeedPage() {
             )}
 
             {/* Comment input */}
-            <div style={{ display: "flex", gap: 8, padding: "8px 16px 12px" }}>
+            <div style={{ display: "flex", gap: 6, padding: "8px 10px 10px" }}>
               <img src={profile?.avatar_url ?? "/avatar-placeholder.png"}
                 style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
               <input value={commentTexts[post.id] ?? ""}
                 onChange={(e) => setCommentTexts((p) => ({ ...p, [post.id]: e.target.value }))}
                 placeholder="Write a comment..."
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addComment(post.id); } }}
-                style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: 20, padding: "7px 14px", fontSize: 13, outline: "none" }} />
+                style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: 20, padding: "7px 10px", fontSize: 13, outline: "none", minWidth: 0 }} />
               <button onClick={() => addComment(post.id)}
                 disabled={!commentTexts[post.id]?.trim()}
-                style={{ background: commentTexts[post.id]?.trim() ? "#2d6a2d" : "#e5e7eb", color: commentTexts[post.id]?.trim() ? "white" : "#9ca3af", border: "none", padding: "7px 14px", borderRadius: 20, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+                style={{ background: commentTexts[post.id]?.trim() ? "#2d6a2d" : "#e5e7eb", color: commentTexts[post.id]?.trim() ? "white" : "#9ca3af", border: "none", padding: "7px 10px", borderRadius: 20, fontSize: 13, cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
                 Send
               </button>
             </div>
