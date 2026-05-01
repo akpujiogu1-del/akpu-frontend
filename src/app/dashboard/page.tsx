@@ -230,7 +230,7 @@ export default function FeedPage() {
             </div>
 
             {post.content && (
-              <p style={{ padding: "0 12px 10px", fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0, wordBreak: "break-word" }}>
+              <p style={{ padding: "0 12px 10px", fontSize: 14, color: "#374151", lineHeight: 1.6, margin: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}>
                 {post.content}
               </p>
             )}
