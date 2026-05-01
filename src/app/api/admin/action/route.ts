@@ -56,8 +56,17 @@ export async function POST(req: Request) {
         target_type: "user",
       });
     } else if (action === "assign_role") {
-      await admin.from("user_roles").delete().eq("user_id", id);
-      result = await admin.from("user_roles").insert({ user_id: id, role: data.role, scope_id: null });
+      // For non-group roles, remove all existing roles first
+      if (data.role !== "group_admin") {
+        await admin.from("user_roles").delete().eq("user_id", id);
+        result = await admin.from("user_roles").insert({ user_id: id, role: data.role, scope_id: null });
+      } else {
+        // For group_admin, add alongside existing roles with specific scope
+        const scopeId = data.scope_id ?? null;
+        await admin.from("user_roles")
+          .delete().eq("user_id", id).eq("role", "group_admin").eq("scope_id", scopeId);
+        result = await admin.from("user_roles").insert({ user_id: id, role: data.role, scope_id: scopeId });
+      }
     } else if (action === "update_setting") {
       result = await admin.from("site_settings").update({ value: data.value }).eq("key", data.key);
     } else if (action === "deactivate_announcements") {

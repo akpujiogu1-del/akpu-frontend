@@ -25,6 +25,50 @@ type AdminData = {
 };
 
 
+
+function RoleAssigner({ userId, groups, onAssign }: { userId: string; groups: any[]; onAssign: (role: string, scopeId?: string) => void }) {
+  const [role, setRole] = React.useState("");
+  const [groupId, setGroupId] = React.useState("");
+
+  function handleAssign() {
+    if (!role) return;
+    if (role === "group_admin" && !groupId) {
+      alert("Please select a group for this group admin");
+      return;
+    }
+    onAssign(role, role === "group_admin" ? groupId : undefined);
+    setRole(""); setGroupId("");
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+      <select value={role} onChange={(e) => setRole(e.target.value)}
+        style={{ fontSize: 12, border: "1px solid #d1d5db", borderRadius: 6, padding: "6px 8px", cursor: "pointer" }}>
+        <option value="">Assign Role</option>
+        <option value="super_admin">Super Admin</option>
+        <option value="community_admin">Community Admin</option>
+        <option value="group_admin">Group Admin</option>
+        <option value="member">Member</option>
+      </select>
+      {role === "group_admin" && (
+        <select value={groupId} onChange={(e) => setGroupId(e.target.value)}
+          style={{ fontSize: 12, border: "1px solid #d1d5db", borderRadius: 6, padding: "6px 8px", cursor: "pointer" }}>
+          <option value="">Select Group</option>
+          {groups.filter((g: any) => g.type !== "advert").map((g: any) => (
+            <option key={g.id} value={g.id}>{g.name} ({g.type})</option>
+          ))}
+        </select>
+      )}
+      {role && (
+        <button onClick={handleAssign}
+          style={{ background: "#2d6a2d", color: "white", border: "none", padding: "6px 10px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+          Assign
+        </button>
+      )}
+    </div>
+  );
+}
+
 function AdvertsTab({ S, BG, BB, BR, CARD, saving, uploadImg, action, adverts, loadData }: any) {
   const [form, setForm] = React.useState({ subject: "", body: "", image_url: "", slot: "1" });
   const [uploading, setUploading] = React.useState(false);
@@ -388,14 +432,18 @@ export default function SuperAdminPage() {
                       {u.status === "suspended" && (
                         <button onClick={() => reinstateUser(u.id)} disabled={saving} style={{ ...BG, fontSize: 12, padding: "6px 12px" }}>Reinstate</button>
                       )}
-                      <select onChange={(e) => { if (e.target.value) { assignRole(u.id, e.target.value); e.target.value = ""; } }}
-                        style={{ fontSize: 12, border: "1px solid #d1d5db", borderRadius: 6, padding: "6px 8px", cursor: "pointer" }}>
-                        <option value="">Assign Role</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="community_admin">Community Admin</option>
-                        <option value="group_admin">Group Admin</option>
-                        <option value="member">Member</option>
-                      </select>
+                      <RoleAssigner userId={u.id} groups={data?.groups ?? []} onAssign={async (role, scopeId) => {
+                        setSaving(true);
+                        try {
+                          const res = await fetch("/api/admin/action", {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ action: "assign_role", id: u.id, data: { role, scope_id: scopeId ?? null } }),
+                          });
+                          const json = await res.json();
+                          if (json.error) toast.error(json.error); else { toast.success("Role assigned!"); loadData(); }
+                        } catch { toast.error("Failed"); }
+                        setSaving(false);
+                      }} />
                     </div>
                   </div>
                 </div>
