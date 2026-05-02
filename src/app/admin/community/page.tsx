@@ -199,7 +199,13 @@ export default function CommunityAdminPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: "Outfit, sans-serif" }}>
       <div style={{ background: "#2d6a2d", color: "white", padding: "16px 20px" }}>
+        <div>
+        <button onClick={() => window.location.href="/dashboard"}
+          style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "none", padding: "5px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontWeight: 600, marginBottom: 6, display: "inline-block" }}>
+          ← Back to Dashboard
+        </button>
         <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>🏛️ Community Admin Dashboard</h1>
+      </div>
       </div>
       <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>

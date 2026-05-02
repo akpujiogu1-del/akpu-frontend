@@ -149,7 +149,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div style={{ width: "100%", minWidth: 0, overflowX: "hidden" }}>
+    <div style={{ width: "100%", minWidth: 0, overflowX: "hidden", boxSizing: "border-box" }}>
       <AnnouncementRow />
 
       {/* Composer */}

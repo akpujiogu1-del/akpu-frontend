@@ -146,7 +146,7 @@ export default function UmunnaPage() {
                     paddingBottom: 8, borderBottom: "2px solid #f3e0cc" }}>
                     {TYPE_LABELS[type]} ({list.length})
                   </h2>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
                     {list.map((g) => {
                       const membership = memberships.find((m) => m.group_id === g.id);
                       return (
@@ -248,9 +248,9 @@ export default function UmunnaPage() {
               <input value={chatMsg} onChange={(e) => setChatMsg(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") sendGroupMsg(); }}
                 placeholder="Type a message..."
-                style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none" }} />
+                style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 10px", fontSize: 14, outline: "none", minWidth: 0 }} />
               <button onClick={sendGroupMsg} disabled={!chatMsg.trim()}
-                style={{ background: chatMsg.trim() ? "#2d6a2d" : "#e5e7eb", color: chatMsg.trim() ? "white" : "#9ca3af", border: "none", padding: "10px 18px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                style={{ background: chatMsg.trim() ? "#2d6a2d" : "#e5e7eb", color: chatMsg.trim() ? "white" : "#9ca3af", border: "none", padding: "10px 12px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
                 Send
               </button>
             </div>
