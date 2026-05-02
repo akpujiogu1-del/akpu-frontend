@@ -117,7 +117,7 @@ export default function UmunnaPage() {
   });
 
   return (
-    <div>
+    <div style={{ width: "100%", minWidth: 0, overflowX: "hidden", boxSizing: "border-box" }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: "#2d6a2d", marginBottom: 4 }}>
         Umunna, Groups & Age Grades
       </h1>
@@ -125,7 +125,7 @@ export default function UmunnaPage() {
         Join groups, chat with members, vote on polls and access files.
       </p>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20, width: "100%" }}>
         <button onClick={() => setTab("groups")} style={tabStyle("groups")}>All Groups</button>
         <button onClick={() => setTab("mine")} style={tabStyle("mine")}>My Groups</button>
         {selectedGroup && <button onClick={() => setTab("chat")} style={tabStyle("chat")}>💬 {selectedGroup.name}</button>}
@@ -222,24 +222,24 @@ export default function UmunnaPage() {
 
       {/* GROUP CHAT + POLLS */}
       {tab === "chat" && selectedGroup && (
-        <div style={{ display: "grid", gap: 16 }} className="md:grid-cols-[1fr_280px]">
+        <div style={{ display: "grid", gap: 12, width: "100%", minWidth: 0, boxSizing: "border-box" }} className="md:grid-cols-[1fr_280px]">
           <div>
             <h2 style={{ fontWeight: 700, color: "#2d6a2d", marginBottom: 12, fontSize: 16 }}>
               💬 {selectedGroup.name}
             </h2>
-            <div style={{ background: "white", borderRadius: 12, border: "1px solid #e5e7eb", height: 380, overflowY: "auto", padding: 16, marginBottom: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ background: "white", borderRadius: 12, border: "1px solid #e5e7eb", height: 320, overflowY: "auto", padding: 12, marginBottom: 10, display: "flex", flexDirection: "column", gap: 10, width: "100%", boxSizing: "border-box" }}>
               {groupMessages.length === 0 && (
                 <p style={{ color: "#9ca3af", textAlign: "center", margin: "auto" }}>No messages yet. Start the conversation!</p>
               )}
               {groupMessages.map((m) => (
                 <div key={m.id} style={{ display: "flex", justifyContent: m.sender_id === userId ? "flex-end" : "flex-start" }}>
-                  <div style={{ maxWidth: "75%", background: m.sender_id === userId ? "#2d6a2d" : "#f3f4f6", color: m.sender_id === userId ? "white" : "#111827", borderRadius: 12, padding: "8px 14px" }}>
-                    {m.sender_id !== userId && (
-                      <p style={{ fontSize: 11, fontWeight: 700, margin: "0 0 4px", color: m.sender_id === userId ? "#c8e6c9" : "#6b3a1f" }}>
-                        {(m.users as any)?.full_name}
-                      </p>
-                    )}
-                    <p style={{ fontSize: 13, margin: 0 }}>{m.content}</p>
+                  <div style={{ maxWidth: "78%", minWidth: 0 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, margin: "0 0 3px", color: m.sender_id === userId ? "#6b7280" : "#6b3a1f", textAlign: m.sender_id === userId ? "right" : "left" }}>
+                      {(m.users as any)?.full_name ?? (m.sender_id === userId ? "You" : "Member")}
+                    </p>
+                    <div style={{ background: m.sender_id === userId ? "#2d6a2d" : "#f3f4f6", color: m.sender_id === userId ? "white" : "#111827", borderRadius: m.sender_id === userId ? "16px 16px 4px 16px" : "16px 16px 16px 4px", padding: "8px 12px", wordBreak: "break-word" }}>
+                      <p style={{ fontSize: 13, margin: 0 }}>{m.content}</p>
+                    </div>
                   </div>
                 </div>
               ))}

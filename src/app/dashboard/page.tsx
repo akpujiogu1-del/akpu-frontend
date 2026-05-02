@@ -149,7 +149,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div style={{ width: "100%", minWidth: 0, overflowX: "hidden", boxSizing: "border-box" }}>
+    <div style={{ width: "100%", minWidth: 0, overflowX: "hidden", boxSizing: "border-box", maxWidth: "100%" }}>
       <AnnouncementRow />
 
       {/* Composer */}
@@ -239,7 +239,7 @@ export default function FeedPage() {
             )}
 
             {/* Actions row */}
-            <div style={{ display: "flex", gap: 12, padding: "8px 12px", borderTop: "1px solid #f3f4f6" }}>
+            <div style={{ display: "flex", gap: 8, padding: "8px 12px", borderTop: "1px solid #f3f4f6", flexWrap: "wrap" }}>
               <button onClick={() => toggleLike(post.id)}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: liked ? 700 : 400, color: liked ? "#2d6a2d" : "#6b7280", display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
                 👍 {post.likes?.length ?? 0}
@@ -291,7 +291,7 @@ export default function FeedPage() {
             )}
 
             {/* Comment input */}
-            <div style={{ display: "flex", gap: 6, padding: "8px 10px 10px" }}>
+            <div style={{ display: "flex", gap: 6, padding: "8px 10px 10px", width: "100%", boxSizing: "border-box" }}>
               <img src={profile?.avatar_url ?? "/avatar-placeholder.png"}
                 style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
               <input value={commentTexts[post.id] ?? ""}

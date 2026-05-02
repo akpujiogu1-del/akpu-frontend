@@ -69,9 +69,11 @@ export default async function DashboardLayout({
           display: "grid",
           gridTemplateColumns: "1fr",
           gap: 20,
+          minWidth: 0,
+          width: "100%",
         }}
           className="lg:grid-cols-[1fr_260px]">
-          <main>{children}</main>
+          <main style={{ minWidth: 0, width: "100%", overflowX: "hidden" }}>{children}</main>
           <aside className="hidden lg:block">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} style={{
