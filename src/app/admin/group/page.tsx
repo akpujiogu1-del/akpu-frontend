@@ -13,6 +13,8 @@ export default function GroupAdminPage() {
   const [polls, setPolls] = useState<any[]>([]);
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pendingKYC, setPendingKYC] = useState<any[]>([]);
+  const [savingKYC, setSavingKYC] = useState(false);
   const [pollForm, setPollForm] = useState({ question: "", options: ["", ""], ends_at: "" });
   const [fileForm, setFileForm] = useState({ name: "", password: "" });
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
@@ -35,6 +37,29 @@ export default function GroupAdminPage() {
     if (data && data.length > 0) setSelectedGroup(data[0]);
   }
 
+  async function loadKYC() {
+    if (!selectedGroup || selectedGroup.type !== "umunna") return;
+    const res = await fetch("/api/admin/umunna");
+    const data = await res.json();
+    if (!data.error) setPendingKYC(data.pendingUsers ?? []);
+  }
+
+  async function kycAction(userId: string, status: string) {
+    setSavingKYC(true);
+    try {
+      const res = await fetch("/api/admin/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_user_status", id: userId, data: { status } }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast.success(status === "approved" ? "User approved!" : "User rejected");
+      loadKYC();
+    } catch (err: any) { toast.error(err.message); }
+    setSavingKYC(false);
+  }
+
   async function loadGroupData() {
     if (!selectedGroup) return;
     setLoading(true);
@@ -53,6 +78,7 @@ export default function GroupAdminPage() {
     setPolls(p.data ?? []);
     setFiles(f.data ?? []);
     setLoading(false);
+    loadKYC();
   }
 
   async function updateMember(memberId: string, status: string) {
@@ -156,6 +182,7 @@ export default function GroupAdminPage() {
             {/* Tabs */}
             <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4 }}>
               {[
+                ...(selectedGroup?.type === "umunna" ? [{ id: "kyc", label: `KYC Approvals (${pendingKYC.length})` }] : []),
                 { id: "members", label: `Members (${pending.length} pending)` },
                 { id: "polls",   label: "Polls" },
                 { id: "files",   label: "Documents" },
@@ -169,6 +196,57 @@ export default function GroupAdminPage() {
                 </button>
               ))}
             </div>
+
+            {/* KYC APPROVALS — umunna only */}
+            {tab === "kyc" && selectedGroup?.type === "umunna" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2d6a2d", margin: 0 }}>
+                    KYC Approvals — {selectedGroup.name} ({pendingKYC.length})
+                  </h2>
+                  <button onClick={loadKYC}
+                    style={{ ...BG, padding: "6px 14px", fontSize: 12 }}>
+                    🔄 Refresh
+                  </button>
+                </div>
+                {pendingKYC.length === 0 ? (
+                  <div style={{ ...CARD, textAlign: "center", padding: 40 }}>
+                    <p style={{ fontSize: 36, margin: "0 0 8px" }}>✅</p>
+                    <p style={{ fontWeight: 700, color: "#2d6a2d", margin: "0 0 4px" }}>No pending approvals</p>
+                    <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+                      New registrations from {selectedGroup.name} will appear here
+                    </p>
+                  </div>
+                ) : pendingKYC.map((u: any) => (
+                  <div key={u.id} style={CARD}>
+                    <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontWeight: 800, fontSize: 15, color: "#2d6a2d", margin: "0 0 6px" }}>
+                          {u.full_name || "⚠️ KYC not submitted"}
+                        </p>
+                        <p style={{ fontSize: 13, color: "#374151", margin: "0 0 2px" }}>📧 {u.email}</p>
+                        <p style={{ fontSize: 13, color: "#374151", margin: "0 0 2px" }}>📞 {u.phone || "Not provided"}</p>
+                        <p style={{ fontSize: 13, color: "#374151", margin: "0 0 2px" }}>🏡 {u.village || "Not submitted"}</p>
+                        <p style={{ fontSize: 13, color: "#374151", margin: "0 0 2px" }}>👤 {u.sex || "—"} · 🎂 {u.date_of_birth || "—"}</p>
+                        <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>
+                          Registered: {new Date(u.created_at).toLocaleString()}
+                        </p>
+                        <div style={{ marginTop: 6 }}>
+                          {!u.village
+                            ? <span style={{ fontSize: 11, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 8, fontWeight: 600 }}>⏳ Awaiting KYC</span>
+                            : <span style={{ fontSize: 11, background: "#dcfce7", color: "#166534", padding: "2px 8px", borderRadius: 8, fontWeight: 600 }}>✅ KYC submitted</span>
+                          }
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignSelf: "flex-start", flexWrap: "wrap" }}>
+                        <button onClick={() => kycAction(u.id, "approved")} disabled={savingKYC} style={BG}>✅ Approve</button>
+                        <button onClick={() => kycAction(u.id, "rejected")} disabled={savingKYC} style={BR}>❌ Reject</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* MEMBERS */}
             {tab === "members" && (

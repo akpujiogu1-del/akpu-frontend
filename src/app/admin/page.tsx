@@ -34,18 +34,7 @@ export default async function AdminRouter() {
   if (roles.includes("super_admin"))     redirect("/admin/super");
   if (roles.includes("community_admin")) redirect("/admin/community");
 
-  // Check if group_admin is for an umunna group
-  if (roles.includes("group_admin")) {
-    const { data: roleData } = await supabase
-      .from("user_roles").select("role, scope_id").eq("user_id", session.user.id);
-    const umunnaRole = roleData?.find((r: any) => r.role === "group_admin" && r.scope_id);
-    if (umunnaRole) {
-      const { data: group } = await supabase
-        .from("groups").select("type").eq("id", umunnaRole.scope_id).single();
-      if (group?.type === "umunna") redirect("/admin/umunna");
-    }
-    redirect("/admin/group");
-  }
+  if (roles.includes("group_admin")) redirect("/admin/group");
 
   redirect("/dashboard");
 }
