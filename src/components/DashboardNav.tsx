@@ -125,7 +125,14 @@ export default function DashboardNav({ profile }: { profile: any }) {
               )}
               {notifs.map((n) => (
                 <div key={n.id}
-                  onClick={() => { markRead(n.id); setShowNotifs(false); if (isAdmin) router.push("/admin/super"); }}
+                  onClick={async () => {
+    markRead(n.id); setShowNotifs(false);
+    if (!isAdmin) return;
+    // Route to correct admin page based on role
+    if (roles.includes("super_admin")) router.push("/admin/super");
+    else if (roles.includes("community_admin")) router.push("/admin/community");
+    else if (roles.includes("group_admin")) router.push("/admin/umunna");
+  }}
                   style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6", cursor: "pointer", background: n.read ? "white" : "#eaf5ea" }}>
                   <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 13, color: "#111827" }}>{n.title}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>{n.body}</p>
