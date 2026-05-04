@@ -13,25 +13,25 @@ const NAV = [
 
 export default function DashboardNav({ profile }: { profile: any }) {
   const router = useRouter();
-  const [unread, setUnread] = useState(0);
-  const [notifs, setNotifs] = useState<any[]>([]);
-  const [showNotifs, setShowNotifs] = useState(false);
-
+  const [unread, setUnread]           = useState(0);
+  const [notifs, setNotifs]           = useState<any[]>([]);
+  const [showNotifs, setShowNotifs]   = useState(false);
   const [showWarning, setShowWarning] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const warningRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const roles: string[] = profile?.user_roles?.map((r: any) => r.role) ?? [];
   const isAdmin = roles.some((r) =>
     ["super_admin", "community_admin", "group_admin"].includes(r)
   );
 
+  // ── Session timeout ──────────────────────────────────────
   const resetTimer = useCallback(() => {
     setShowWarning(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (warningRef.current) clearTimeout(warningRef.current);
 
-    // Show warning at 4 minutes
+    // Warn at 4 minutes
     warningRef.current = setTimeout(() => {
       setShowWarning(true);
     }, 4 * 60 * 1000);
@@ -46,7 +46,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
   useEffect(() => {
     const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
     events.forEach(e => window.addEventListener(e, resetTimer));
-    resetTimer(); // Start timer on mount
+    resetTimer();
     return () => {
       events.forEach(e => window.removeEventListener(e, resetTimer));
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -54,6 +54,7 @@ export default function DashboardNav({ profile }: { profile: any }) {
     };
   }, [resetTimer]);
 
+  // ── Notifications ─────────────────────────────────────────
   useEffect(() => {
     loadNotifs();
     const ch = supabase
@@ -97,116 +98,140 @@ export default function DashboardNav({ profile }: { profile: any }) {
 
   return (
     <>
+      {/* Inactivity warning banner */}
       {showWarning && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
-          background: "#92400e", color: "white", padding: "10px 16px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          fontFamily: "Outfit, sans-serif", fontSize: 14, fontWeight: 600,
+          background: "#92400e", color: "white",
+          padding: "10px 16px",
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between",
+          fontFamily: "Outfit, sans-serif",
+          fontSize: 14, fontWeight: 600,
           flexWrap: "wrap", gap: 8,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
         }}>
           <span>⚠️ You will be signed out in 1 minute due to inactivity.</span>
-          <button onClick={resetTimer}
-            style={{ background: "white", color: "#92400e", border: "none", padding: "5px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <button
+            onClick={resetTimer}
+            style={{
+              background: "white", color: "#92400e",
+              border: "none", padding: "5px 16px",
+              borderRadius: 8, fontSize: 13,
+              fontWeight: 700, cursor: "pointer",
+            }}>
             Stay Signed In
           </button>
         </div>
       )}
-    <nav style={{ background: "#2d6a2d", position: "sticky", top: 0, zIndex: 50, fontFamily: "Outfit, sans-serif", marginTop: showWarning ? 44 : 0 }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 6px", display: "flex", alignItems: "center", height: 56, width: "100%", overflowX: "hidden" }}>
 
-        <Link href="/dashboard"
-          style={{ color: "white", fontWeight: 800, fontSize: 18, textDecoration: "none", marginRight: 16, flexShrink: 0 }}>
-          🏘️ Akpu
-        </Link>
+      <nav style={{
+        background: "#2d6a2d",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        fontFamily: "Outfit, sans-serif",
+        marginTop: showWarning ? 44 : 0,
+      }}>
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          padding: "0 6px",
+          display: "flex", alignItems: "center",
+          height: 56, width: "100%", overflowX: "hidden",
+        }}>
 
-        {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, overflowX: "auto", minWidth: 0, scrollbarWidth: "none" }}>
-          {NAV.map(({ href, icon, label }) => (
-            <Link key={href} href={href}
-              style={{ color: "white", textDecoration: "none", padding: "6px 10px", borderRadius: 8, fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, minWidth: 44, flexShrink: 0 }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-              <span style={{ fontSize: 18 }}>{icon}</span>
-              <span style={{ fontSize: 10 }}>{label}</span>
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link href="/admin"
-              style={{ color: "white", background: "#6b3a1f", textDecoration: "none", padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700, marginLeft: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, flexShrink: 0 }}>
-              <span style={{ fontSize: 18 }}>⚙️</span>
-              <span style={{ fontSize: 10 }}>Admin</span>
-            </Link>
-          )}
-        </div>
-
-        {/* Right: notifications + avatar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4, flexShrink: 0, position: "relative" }}>
-
-          {/* Notification bell */}
-          <button onClick={() => setShowNotifs(!showNotifs)}
-            style={{ background: "none", border: "none", cursor: "pointer", position: "relative", color: "white", fontSize: 22, padding: 4 }}>
-            🔔
-            {unread > 0 && (
-              <span style={{ position: "absolute", top: 0, right: 0, background: "#dc2626", color: "white", borderRadius: "50%", width: 16, height: 16, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-          </button>
-
-          {/* Notification dropdown */}
-          {showNotifs && (
-            <div style={{ position: "fixed", top: 56, right: 8, width: "min(320px, calc(100vw - 16px))", background: "white", borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid #e5e7eb", zIndex: 100, maxHeight: 400, overflowY: "auto" }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p style={{ margin: 0, fontWeight: 700, color: "#2d6a2d", fontSize: 14 }}>Notifications</p>
-                {unread > 0 && (
-                  <button onClick={markAllRead}
-                    style={{ background: "none", border: "none", color: "#2d6a2d", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
-                    Mark all read
-                  </button>
-                )}
-              </div>
-              {notifs.length === 0 && (
-                <div style={{ padding: 24, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
-                  No notifications yet
-                </div>
-              )}
-              {notifs.map((n) => (
-                <div key={n.id}
-                  onClick={async () => {
-    markRead(n.id); setShowNotifs(false);
-    if (!isAdmin) return;
-    // Route to correct admin page based on role
-    if (roles.includes("super_admin")) router.push("/admin/super");
-    else if (roles.includes("community_admin")) router.push("/admin/community");
-    else if (roles.includes("group_admin")) router.push("/admin/umunna");
-  }}
-                  style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6", cursor: "pointer", background: n.read ? "white" : "#eaf5ea" }}>
-                  <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 13, color: "#111827" }}>{n.title}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>{n.body}</p>
-                  <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
-                    {new Date(n.created_at).toLocaleString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Avatar */}
-          <Link href="/dashboard/settings">
-            <img src={profile?.avatar_url ?? "/avatar-placeholder.png"}
-              style={{ width: 34, height: 34, borderRadius: "50%", border: "2px solid white", objectFit: "cover", cursor: "pointer" }} />
+          <Link href="/dashboard"
+            style={{ color: "white", fontWeight: 800, fontSize: 18, textDecoration: "none", marginRight: 16, flexShrink: 0 }}>
+            🏘️ Akpu
           </Link>
 
-          {/* Logout - desktop only */}
-          <button onClick={handleLogout}
-            className="hidden md:block"
-            style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
-            Out
-          </button>
+          {/* Nav links */}
+          <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, overflowX: "auto", minWidth: 0, scrollbarWidth: "none" }}>
+            {NAV.map(({ href, icon, label }) => (
+              <Link key={href} href={href}
+                style={{ color: "white", textDecoration: "none", padding: "6px 10px", borderRadius: 8, fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, minWidth: 44, flexShrink: 0 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                <span style={{ fontSize: 18 }}>{icon}</span>
+                <span style={{ fontSize: 10 }}>{label}</span>
+              </Link>
+            ))}
+            {isAdmin && (
+              <Link href="/admin"
+                style={{ color: "white", background: "#6b3a1f", textDecoration: "none", padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700, marginLeft: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                <span style={{ fontSize: 18 }}>⚙️</span>
+                <span style={{ fontSize: 10 }}>Admin</span>
+              </Link>
+            )}
+          </div>
+
+          {/* Right: notifications + avatar */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4, flexShrink: 0, position: "relative" }}>
+
+            {/* Notification bell */}
+            <button onClick={() => setShowNotifs(!showNotifs)}
+              style={{ background: "none", border: "none", cursor: "pointer", position: "relative", color: "white", fontSize: 22, padding: 4 }}>
+              🔔
+              {unread > 0 && (
+                <span style={{ position: "absolute", top: 0, right: 0, background: "#dc2626", color: "white", borderRadius: "50%", width: 16, height: 16, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </button>
+
+            {/* Notification dropdown */}
+            {showNotifs && (
+              <div style={{ position: "fixed", top: 56, right: 8, width: "min(320px, calc(100vw - 16px))", background: "white", borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid #e5e7eb", zIndex: 100, maxHeight: 400, overflowY: "auto" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: "#2d6a2d", fontSize: 14 }}>Notifications</p>
+                  {unread > 0 && (
+                    <button onClick={markAllRead}
+                      style={{ background: "none", border: "none", color: "#2d6a2d", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                {notifs.length === 0 && (
+                  <div style={{ padding: 24, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                    No notifications yet
+                  </div>
+                )}
+                {notifs.map((n) => (
+                  <div key={n.id}
+                    onClick={async () => {
+                      markRead(n.id);
+                      setShowNotifs(false);
+                      if (!isAdmin) return;
+                      if (roles.includes("super_admin")) router.push("/admin/super");
+                      else if (roles.includes("community_admin")) router.push("/admin/community");
+                      else if (roles.includes("group_admin")) router.push("/admin/group");
+                    }}
+                    style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6", cursor: "pointer", background: n.read ? "white" : "#eaf5ea" }}>
+                    <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 13, color: "#111827" }}>{n.title}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>{n.body}</p>
+                    <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
+                      {new Date(n.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Avatar */}
+            <Link href="/dashboard/settings">
+              <img src={profile?.avatar_url ?? "/avatar-placeholder.png"}
+                style={{ width: 34, height: 34, borderRadius: "50%", border: "2px solid white", objectFit: "cover", cursor: "pointer" }} />
+            </Link>
+
+            {/* Logout - desktop only */}
+            <button onClick={handleLogout}
+              className="hidden md:block"
+              style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+              Out
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
-  return ;
 }
