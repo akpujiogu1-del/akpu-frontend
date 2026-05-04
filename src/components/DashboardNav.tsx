@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
 const NAV = [
@@ -17,10 +17,42 @@ export default function DashboardNav({ profile }: { profile: any }) {
   const [notifs, setNotifs] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
 
+  const [showWarning, setShowWarning] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const warningRef = useRef<NodeJS.Timeout | null>(null);
+
   const roles: string[] = profile?.user_roles?.map((r: any) => r.role) ?? [];
   const isAdmin = roles.some((r) =>
     ["super_admin", "community_admin", "group_admin"].includes(r)
   );
+
+  const resetTimer = useCallback(() => {
+    setShowWarning(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (warningRef.current) clearTimeout(warningRef.current);
+
+    // Show warning at 4 minutes
+    warningRef.current = setTimeout(() => {
+      setShowWarning(true);
+    }, 4 * 60 * 1000);
+
+    // Sign out at 5 minutes
+    timeoutRef.current = setTimeout(async () => {
+      await supabase.auth.signOut();
+      router.push("/auth/login");
+    }, 5 * 60 * 1000);
+  }, [router]);
+
+  useEffect(() => {
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer(); // Start timer on mount
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (warningRef.current) clearTimeout(warningRef.current);
+    };
+  }, [resetTimer]);
 
   useEffect(() => {
     loadNotifs();
@@ -64,7 +96,23 @@ export default function DashboardNav({ profile }: { profile: any }) {
   };
 
   return (
-    <nav style={{ background: "#2d6a2d", position: "sticky", top: 0, zIndex: 50, fontFamily: "Outfit, sans-serif" }}>
+    <>
+      {showWarning && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
+          background: "#92400e", color: "white", padding: "10px 16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontFamily: "Outfit, sans-serif", fontSize: 14, fontWeight: 600,
+          flexWrap: "wrap", gap: 8,
+        }}>
+          <span>⚠️ You will be signed out in 1 minute due to inactivity.</span>
+          <button onClick={resetTimer}
+            style={{ background: "white", color: "#92400e", border: "none", padding: "5px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            Stay Signed In
+          </button>
+        </div>
+      )}
+    <nav style={{ background: "#2d6a2d", position: "sticky", top: 0, zIndex: 50, fontFamily: "Outfit, sans-serif", marginTop: showWarning ? 44 : 0 }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 6px", display: "flex", alignItems: "center", height: 56, width: "100%", overflowX: "hidden" }}>
 
         <Link href="/dashboard"
@@ -160,4 +208,5 @@ export default function DashboardNav({ profile }: { profile: any }) {
       </div>
     </nav>
   );
+  return ;
 }
