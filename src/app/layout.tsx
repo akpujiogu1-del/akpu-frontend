@@ -1,14 +1,39 @@
-import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
-import "./globals.css";
+import type { Metadata, Viewport } from "next";
 import { Toaster } from "react-hot-toast";
-
-const outfit = Outfit({ subsets: ["latin"] });
+import "./globals.css";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export const metadata: Metadata = {
-  title: "Akpu — Land of the Ancients",
-  description:
-    "Official Community Platform for Akpu Town, Orumba South LGA, Anambra State",
+  title: "Akpu Town — Land of the Ancients",
+  description: "The official digital platform for Akpu Town, Orumba South LGA, Anambra State, Nigeria.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Akpu Town",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  openGraph: {
+    title: "Akpu Town — Land of the Ancients",
+    description: "The official digital platform for Akpu Town, Orumba South LGA, Anambra State, Nigeria.",
+    images: [{ url: "/akpu-icon.jpg" }],
+    siteName: "Akpu Town",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2d6a2d",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -18,9 +43,29 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} bg-white text-gray-900`}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Akpu Town" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#2d6a2d" />
+      </head>
+      <body>
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              fontFamily: "Outfit, sans-serif",
+              fontSize: 14,
+              fontWeight: 600,
+            },
+          }}
+        />
+        <InstallPrompt />
         {children}
-        <Toaster position="top-right" />
       </body>
     </html>
   );
