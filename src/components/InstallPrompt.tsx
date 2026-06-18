@@ -7,6 +7,11 @@ export default function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(console.error);
+    }
+
     // Already installed as PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
