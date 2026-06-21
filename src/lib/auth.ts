@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 
 export const VILLAGES = [
-  "Umueze/Umuezeilo",
+  "Umueze",
   "Umuihu",
   "Ohemmiri",
   "Mgboko",

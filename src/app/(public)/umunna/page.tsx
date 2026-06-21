@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import Link from "next/link";
 
 const VILLAGES = [
-  { name: "Umueze/Umuezeilo",       icon: "🏡" },
+  { name: "Umueze",       icon: "🏡" },
   { name: "Umuihu",                 icon: "🏡" },
   { name: "Ohemmiri",               icon: "🏡" },
   { name: "Mgboko",                 icon: "🏡" },
